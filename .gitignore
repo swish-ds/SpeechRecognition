@@ -1,0 +1,8 @@
+mobilenet_tr_features.csv
+mobilenet_vl_features.csv
+MIRACL
+val_MIRACL
+train_MIRACL
+test_MIRACL
+temp
+.ipynb_checkpoints
