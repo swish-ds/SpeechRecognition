@@ -1,6 +1,7 @@
 lip_reading/mobilenet_tr_features.csv
 lip_reading/mobilenet_vl_features.csv
 lip_reading/MIRACL
+lip_reading/data
 lip_reading/val_MIRACL
 lip_reading/train_MIRACL
 lip_reading/test_MIRACL
