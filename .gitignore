@@ -1,8 +1,10 @@
-mobilenet_tr_features.csv
-mobilenet_vl_features.csv
-MIRACL
-val_MIRACL
-train_MIRACL
-test_MIRACL
-temp
+lip_reading/mobilenet_tr_features.csv
+lip_reading/mobilenet_vl_features.csv
+lip_reading/MIRACL
+lip_reading/val_MIRACL
+lip_reading/train_MIRACL
+lip_reading/test_MIRACL
+lip_reading/temp
+video_classification/UCF
+video_classification/data
 .ipynb_checkpoints
