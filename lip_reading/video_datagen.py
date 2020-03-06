@@ -18,6 +18,7 @@ import scipy.ndimage as ndi
 from six.moves import range
 import threading
 import warnings
+from scipy import stats as s
 
 from keras import backend as K
 
@@ -369,22 +370,23 @@ class Iterator(object):
                 np.random.seed(seed + self.total_batches_seen)
             if self.batch_index == 0:
                 index_array = np.arange(n)
-                print('n = ', n)
+                # print('n = ', n)
                 if shuffle:
                     index_array = np.random.permutation(n)
-            print('init index_array = ', index_array)
+            # print('init index_array = ', index_array[:5], '...', index_array[-5:], 'len = ', len(index_array))
             
             current_index = (self.batch_index * batch_size * frames_per_step) % n
             if n > current_index + batch_size*frames_per_step:
-                current_batch_size = batch_size*frames_per_step
+                # current_batch_size = batch_size*frames_per_step
                 current_batch_size = batch_size
                 self.batch_index += 1
             else:
-                current_batch_size = n - current_index
+                # current_batch_size = n - current_index
+                current_batch_size = batch_size
                 self.batch_index = 0
             self.total_batches_seen += 1
-            print('current_batch_size = ', current_batch_size)
-            print('yielded index_array = ', index_array[current_index: current_index + frames_per_step * current_batch_size])
+            # print('current_batch_size = ', current_batch_size)
+            # print('yielded index_array = ', index_array[current_index: current_index + frames_per_step * current_batch_size])
             
             yield (index_array[current_index: current_index + frames_per_step * current_batch_size], current_index, current_batch_size)
             #yield (index_array[current_index: current_index + frames_per_step], current_index, current_batch_size)
@@ -691,30 +693,36 @@ class DirectoryIterator(Iterator):
             The next batch.
         """
         with self.lock:
-            index_array, current_index, current_batch_size = next(
-                self.index_generator)
+            index_array, current_index, current_batch_size = next(self.index_generator)
         
         batch_x = np.zeros((current_batch_size,)  + (self.frames_per_step,) + self.image_shape, dtype='uint8')
-        print('batch_x shape = ', batch_x.shape)
-        print('current_batch_size = ', current_batch_size)
-        print('received index_array = ', index_array)
-        print('frames_per_step = ', self.frames_per_step)
+        # print(batch_x.shape)
+        # print('current_batch_size = ', current_batch_size)
+        # print('self.frames_per_step = ', self.frames_per_step)
+        # print('received index_array = ', index_array)
+        # print('batch_x shape = ', batch_x.shape)
         grayscale = self.color_mode == 'grayscale'
 
         for kk in range(current_batch_size):
-            for i in range(int(len(index_array))):
-                fname = self.filenames[index_array[i]]
-                print(fname)
+            i = 0
+            for idx in index_array[kk * self.frames_per_step : (kk + 1) * self.frames_per_step]:
+                # print('idx = ', idx)
+                # print('index_array[idx] = ', index_array[idx])
+                # print('len(self.filenames) = ', len(self.filenames))
+                # fname = self.filenames[index_array[idx]]
+                fname = self.filenames[idx]
+                # print(fname)
                 img = load_img(os.path.join(self.directory, fname),
                                grayscale=grayscale,
                                target_size=self.target_size)
                 x = img_to_array(img, data_format=self.data_format)
                 
-                print('lalallal3')
                 batch_x[kk, i] = img
+                i += 1
 
-        print('batch_x shape = ', batch_x.shape)
-            
+        # print(batch_x.shape)
+        # print('len(batch_x) = ', len(batch_x))
+
         if self.save_to_dir:
             for i in range(current_batch_size):
                 img = array_to_img(batch_x[i], self.data_format, scale=True)
@@ -724,9 +732,6 @@ class DirectoryIterator(Iterator):
                                                                       1e4),
                                                                   format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
-        
-        print('len self.classes = ', len(self.classes))
-        print('sliced classes = ', self.classes[index_array])
 
         if self.class_mode == 'input':
             batch_y = batch_x.copy()
@@ -735,11 +740,19 @@ class DirectoryIterator(Iterator):
         elif self.class_mode == 'binary':
             batch_y = self.classes[index_array].astype(K.floatx())
         elif self.class_mode == 'categorical':
-            batch_y = np.zeros(
-                (len(batch_x), self.frames_per_step), dtype='uint8')
-            for i, label in enumerate(self.classes[index_array]):
-                batch_y[i, label] = 1.
+            batch_y = np.zeros((len(batch_x), self.frames_per_step))
+            # print('batch_y shape = ', batch_y.shape)
+            # print('self.classes[index_array] = ', self.classes[index_array])
+            for i in range(current_batch_size):
+                # print((self.classes[index_array[i*self.frames_per_step:(i+1)*self.frames_per_step]]))
+                # print(np.mean(self.classes[index_array[i*self.frames_per_step:(i+1)*self.frames_per_step]], dtype='uint8'))
+                # print(s.mode(self.classes[index_array[i*self.frames_per_step:(i+1)*self.frames_per_step]])[0][0])
+                # batch_y[i][np.mean(self.classes[index_array[i*self.frames_per_step:(i+1)*self.frames_per_step]], dtype='uint8')] = 1.
+                batch_y[i][s.mode(self.classes[index_array[i*self.frames_per_step:(i+1)*self.frames_per_step]])[0][0]] = 1
+                # batch_y[i][9] = 1
+                # print(batch_y)
+                # print('end')
         else:
             return batch_x
-        
+
         return batch_x, batch_y
