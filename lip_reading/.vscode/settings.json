@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "/home/dmitrii/pythonenvs/lr1_3.6/bin/python",
+    "python.pythonPath": "/home/dmitrii/opt/pyenvs/env36_1/bin/python",
     "python.linting.pylintEnabled": true,
     "python.linting.enabled": true
 }

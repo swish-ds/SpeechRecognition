@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """
@@ -19,9 +18,7 @@ from six.moves import range
 import threading
 import warnings
 from scipy import stats as s
-
 from keras import backend as K
-
 from PIL import Image as pil_image
 
 def array_to_img(x, data_format=None, scale=True):
@@ -370,27 +367,20 @@ class Iterator(object):
                 np.random.seed(seed + self.total_batches_seen)
             if self.batch_index == 0:
                 index_array = np.arange(n)
-                # print('n = ', n)
                 if shuffle:
                     index_array = np.random.permutation(n)
-            # print('init index_array = ', index_array[:5], '...', index_array[-5:], 'len = ', len(index_array))
             
             current_index = (self.batch_index * batch_size * frames_per_step) % n
+
             if n > current_index + batch_size*frames_per_step:
-                # current_batch_size = batch_size*frames_per_step
                 current_batch_size = batch_size
                 self.batch_index += 1
             else:
-                # current_batch_size = n - current_index
-                current_batch_size = batch_size
+                current_batch_size = int((n - current_index) / frames_per_step)
                 self.batch_index = 0
             self.total_batches_seen += 1
-            # print('current_batch_size = ', current_batch_size)
-            # print('yielded index_array = ', index_array[current_index: current_index + frames_per_step * current_batch_size])
-            
+
             yield (index_array[current_index: current_index + frames_per_step * current_batch_size], current_index, current_batch_size)
-            #yield (index_array[current_index: current_index + frames_per_step], current_index, current_batch_size)
-            #yield (index_array[current_index: current_index + current_batch_size], current_index, current_batch_size)
 
     def __iter__(self):
         # Needed if we want to do something like:
@@ -399,108 +389,6 @@ class Iterator(object):
 
     def __next__(self, *args, **kwargs):
         return self.next(*args, **kwargs)
-
-class NumpyArrayIterator(Iterator):
-    """Iterator yielding data from a Numpy array.
-    # Arguments
-        x: Numpy array of input data.
-        y: Numpy array of targets data.
-        image_data_generator: Instance of `ImageDataGenerator`
-            to use for random transformations and normalization.
-        batch_size: Integer, size of a batch.
-        shuffle: Boolean, whether to shuffle the data between epochs.
-        seed: Random seed for data shuffling.
-        data_format: String, one of `channels_first`, `channels_last`.
-        save_to_dir: Optional directory where to save the pictures
-            being yielded, in a viewable format. This is useful
-            for visualizing the random transformations being
-            applied, for debugging purposes.
-        save_prefix: String prefix to use for saving sample
-            images (if `save_to_dir` is set).
-        save_format: Format to use for saving sample images
-            (if `save_to_dir` is set).
-    """
-
-    def __init__(self, x, y, image_data_generator,
-                 batch_size=32, shuffle=False, seed=None,
-                 data_format=None,
-                 save_to_dir=None, save_prefix='', save_format='png'):
-        if y is not None and len(x) != len(y):
-            raise ValueError('X (images tensor) and y (labels) '
-                             'should have the same length. '
-                             'Found: X.shape = %s, y.shape = %s' %
-                             (np.asarray(x).shape, np.asarray(y).shape))
-
-        if data_format is None:
-            data_format = K.image_data_format()
-        self.x = np.asarray(x, dtype=K.floatx())
-
-        if self.x.ndim != 4:
-            raise ValueError('Input data in `NumpyArrayIterator` '
-                             'should have rank 4. You passed an array '
-                             'with shape', self.x.shape)
-        channels_axis = 3 if data_format == 'channels_last' else 1
-        if self.x.shape[channels_axis] not in {1, 3, 4}:
-            warnings.warn('NumpyArrayIterator is set to use the '
-                          'data format convention "' + data_format + '" '
-                          '(channels on axis ' +
-                          str(channels_axis) + '), i.e. expected '
-                          'either 1, 3 or 4 channels on axis ' +
-                          str(channels_axis) + '. '
-                          'However, it was passed an array with shape ' + str(self.x.shape) +
-                          ' (' + str(self.x.shape[channels_axis]) + ' channels).')
-        if y is not None:
-            self.y = np.asarray(y)
-        else:
-            self.y = None
-        self.image_data_generator = image_data_generator
-        self.data_format = data_format
-        self.save_to_dir = save_to_dir
-        self.save_prefix = save_prefix
-        self.save_format = save_format
-        super(NumpyArrayIterator, self).__init__(
-            x.shape[0], batch_size, shuffle, seed)
-
-    def next(self):
-        """For python 2.x.
-        # Returns
-            The next batch.
-        """
-        # Keeps under lock only the mechanism which advances
-        # the indexing of each batch.
-        with self.lock:
-            index_array, current_index, current_batch_size = next(
-                self.index_generator)
-        # The transformation of images is not under thread lock
-        # so it can be done in parallel
-        batch_x = np.zeros(
-            tuple([current_batch_size]+(1,) + list(self.x.shape)[1:]), dtype=K.floatx()) #Added +(1,) +
-
-        # batch_x = np.zeros((current_batch_size, )+(1,) + (self.x.shape), dtype=K.floatx()) #Added +(1,) +
-        
-        for i, j in enumerate(index_array):
-            x = self.x[j]
-            x = self.image_data_generator.random_transform(
-                x.astype(K.floatx()))
-            x = self.image_data_generator.standardize(x)
-            x = self.image_data_generator.change_dims(x)  # my addition
-            batch_x[i] = x
-        if self.save_to_dir:
-            for i in range(current_batch_size):
-                img = array_to_img(batch_x[i], self.data_format, scale=True)
-                fname = '{prefix}_{index}_{hash}.{format}'.format(prefix=self.save_prefix,
-                                                                  index=current_index + i,
-                                                                  hash=np.random.randint(
-                                                                      1e4),
-                                                                  format=self.save_format)
-                img.save(os.path.join(self.save_to_dir, fname))
-        if self.y is None:
-            return batch_x
-        batch_y = self.y[index_array]
-
-        print('damn')
-
-        return batch_x, batch_y
 
 def _count_valid_files_in_directory(directory, white_list_formats, follow_links):
     """Count files with extension in `white_list_formats` contained in a directory.
@@ -517,7 +405,7 @@ def _count_valid_files_in_directory(directory, white_list_formats, follow_links)
 
     samples = 0
     for _, _, files in _recursive_list(directory):
-        for fname in files:
+        for fname in sorted(files):
             is_valid = False
             for extension in white_list_formats:
                 if fname.lower().endswith('.' + extension):
@@ -544,13 +432,12 @@ def _list_valid_filenames_in_directory(directory, white_list_formats,
     """
     def _recursive_list(subpath):
         return sorted(os.walk(subpath, followlinks=follow_links), key=lambda tpl: tpl[0])
-        #return [[sorted(os.walk(subpath))[0][0]], [(sorted(sorted(os.walk(subpath))[0][2]))]]
 
     classes = []
     filenames = []
     subdir = os.path.basename(directory)
     basedir = os.path.dirname(directory)
-    #print('directory is ', directory)
+
     for root, _, files in _recursive_list(directory):
         for fname in sorted(files):
             is_valid = False
@@ -696,32 +583,18 @@ class DirectoryIterator(Iterator):
             index_array, current_index, current_batch_size = next(self.index_generator)
         
         batch_x = np.zeros((current_batch_size,)  + (self.frames_per_step,) + self.image_shape, dtype='uint8')
-        # print(batch_x.shape)
-        # print('current_batch_size = ', current_batch_size)
-        # print('self.frames_per_step = ', self.frames_per_step)
-        # print('received index_array = ', index_array)
-        # print('batch_x shape = ', batch_x.shape)
         grayscale = self.color_mode == 'grayscale'
 
         for kk in range(current_batch_size):
             i = 0
             for idx in index_array[kk * self.frames_per_step : (kk + 1) * self.frames_per_step]:
-                # print('idx = ', idx)
-                # print('index_array[idx] = ', index_array[idx])
-                # print('len(self.filenames) = ', len(self.filenames))
-                # fname = self.filenames[index_array[idx]]
                 fname = self.filenames[idx]
-                # print(fname)
                 img = load_img(os.path.join(self.directory, fname),
                                grayscale=grayscale,
                                target_size=self.target_size)
-                x = img_to_array(img, data_format=self.data_format)
                 
                 batch_x[kk, i] = img
                 i += 1
-
-        # print(batch_x.shape)
-        # print('len(batch_x) = ', len(batch_x))
 
         if self.save_to_dir:
             for i in range(current_batch_size):
@@ -741,17 +614,8 @@ class DirectoryIterator(Iterator):
             batch_y = self.classes[index_array].astype(K.floatx())
         elif self.class_mode == 'categorical':
             batch_y = np.zeros((len(batch_x), self.frames_per_step))
-            # print('batch_y shape = ', batch_y.shape)
-            # print('self.classes[index_array] = ', self.classes[index_array])
             for i in range(current_batch_size):
-                # print((self.classes[index_array[i*self.frames_per_step:(i+1)*self.frames_per_step]]))
-                # print(np.mean(self.classes[index_array[i*self.frames_per_step:(i+1)*self.frames_per_step]], dtype='uint8'))
-                # print(s.mode(self.classes[index_array[i*self.frames_per_step:(i+1)*self.frames_per_step]])[0][0])
-                # batch_y[i][np.mean(self.classes[index_array[i*self.frames_per_step:(i+1)*self.frames_per_step]], dtype='uint8')] = 1.
                 batch_y[i][s.mode(self.classes[index_array[i*self.frames_per_step:(i+1)*self.frames_per_step]])[0][0]] = 1
-                # batch_y[i][9] = 1
-                # print(batch_y)
-                # print('end')
         else:
             return batch_x
 
