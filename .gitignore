@@ -6,3 +6,7 @@ video_classification/UCF
 video_classification/data
 .ipynb_checkpoints
 lip_reading/__pycache__
+.directory
+lip_reading/.directory
+lip_reading/.vscode
+lip_reading/.ipynb_checkpoints
