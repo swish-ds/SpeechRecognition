@@ -12,3 +12,4 @@ lip_reading/.vscode
 lip_reading/.ipynb_checkpoints
 lip_reading/helpers
 lip_reading/model_small.hdf5
+.directory

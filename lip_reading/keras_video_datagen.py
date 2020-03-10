@@ -785,8 +785,9 @@ class DirectoryIterator(Iterator):
             batch_y = self.classes[index_array]
         elif self.class_mode == 'binary':
             batch_y = self.classes[index_array].astype(K.floatx())
-        elif self.class_mode == 'categorical':
-            batch_y = np.zeros((len(batch_x), self.frames_per_step))
+        elif self.class_mode == 'categorical': 
+            # batch_y = np.zeros((len(batch_x), self.frames_per_step))
+            batch_y = np.zeros((len(batch_x), self.num_class))
             for i in range(current_batch_size):
                 batch_y[i][s.mode(self.classes[index_array[i*self.frames_per_step:(i+1)*self.frames_per_step]])[0][0]] = 1
         else:
