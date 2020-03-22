@@ -9,8 +9,8 @@ from six.moves import range
 import threading
 import warnings
 from scipy import stats as s
-from keras import backend as K
 from PIL import Image as pil_image
+from tensorflow import keras
 
 def random_rotation(x, rg, row_axis=1, col_axis=2, channel_axis=0,
                     fill_mode='nearest', cval=0.):
@@ -206,13 +206,13 @@ def array_to_img(x, data_format=None, scale=True):
     if pil_image is None:
         raise ImportError('Could not import PIL.Image. '
                           'The use of `array_to_img` requires PIL.')
-    x = np.asarray(x, dtype=K.floatx())
+    x = np.asarray(x, dtype=keras.backend.floatx())
     if x.ndim != 3:
         raise ValueError('Expected image array to have rank 3 (single image). '
                          'Got array with shape:', x.shape)
 
     if data_format is None:
-        data_format = K.image_data_format()
+        data_format = keras.backend.image_data_format()
     if data_format not in {'channels_first', 'channels_last'}:
         raise ValueError('Invalid data_format:', data_format)
 
@@ -247,13 +247,13 @@ def img_to_array(img, data_format=None):
         ValueError: if invalid `img` or `data_format` is passed.
     """
     if data_format is None:
-        data_format = K.image_data_format()
+        data_format = keras.backend.image_data_format()
     if data_format not in {'channels_first', 'channels_last'}:
         raise ValueError('Unknown data_format: ', data_format)
     # Numpy array x has format (height, width, channel)
     # or (channel, height, width)
     # but original PIL image has format (width, height, channel)
-    x = np.asarray(img, dtype=K.floatx())
+    x = np.asarray(img, dtype=keras.backend.floatx())
     if len(x.shape) == 3:
         if data_format == 'channels_first':
             x = x.transpose(2, 0, 1)
@@ -357,7 +357,7 @@ class ImageDataGenerator(object):
                  data_format=None,
                  random_mult_range=0):
         if data_format is None:
-            data_format = K.image_data_format()
+            data_format = keras.backend.image_data_format()
         self.featurewise_center = featurewise_center
         self.samplewise_center = samplewise_center
         self.featurewise_std_normalization = featurewise_std_normalization
@@ -458,7 +458,7 @@ class ImageDataGenerator(object):
         # Raises
             ValueError: in case of invalid input `x`.
         """
-        x = np.asarray(x, dtype=K.floatx())
+        x = np.asarray(x, dtype=keras.backend.floatx())
         if x.ndim != 4:
             raise ValueError('Input to `.fit()` should have rank 4. '
                              'Got array with shape: ' + str(x.shape))
@@ -478,7 +478,7 @@ class ImageDataGenerator(object):
         x = np.copy(x)
         if augment:
             ax = np.zeros(tuple([rounds * x.shape[0]] +
-                                list(x.shape)[1:]), dtype=K.floatx())
+                                list(x.shape)[1:]), dtype=keras.backend.floatx())
             for r in range(rounds):
                 for i in range(x.shape[0]):
                     ax[i + r * x.shape[0]] = self.random_transform(x[i])
@@ -496,7 +496,7 @@ class ImageDataGenerator(object):
             broadcast_shape = [1, 1, 1]
             broadcast_shape[self.channel_axis - 1] = x.shape[self.channel_axis]
             self.std = np.reshape(self.std, broadcast_shape)
-            x /= (self.std + K.epsilon())
+            x /= (self.std + keras.backend.epsilon())
 
         if self.zca_whitening:
             flat_x = np.reshape(
@@ -667,7 +667,7 @@ class DirectoryIterator(Iterator):
                  save_to_dir=None, save_prefix='', save_format='png',
                  follow_links=False):
         if data_format is None:
-            data_format = K.image_data_format()
+            data_format = keras.backend.image_data_format()
         self.directory = directory
         self.frames_per_step = frames_per_step
         self.image_data_generator = image_data_generator
@@ -752,7 +752,7 @@ class DirectoryIterator(Iterator):
             index_array, current_index, current_batch_size = next(self.index_generator)
         
         # batch_x = np.zeros((current_batch_size,)  + (self.frames_per_step,) + self.image_shape, dtype='uint8')
-        batch_x = np.zeros((current_batch_size,)  + (self.frames_per_step,) + self.image_shape, dtype=K.floatx())
+        batch_x = np.zeros((current_batch_size,)  + (self.frames_per_step,) + self.image_shape, dtype=keras.backend.floatx())
         grayscale = self.color_mode == 'grayscale'
 
         for kk in range(current_batch_size):
@@ -784,7 +784,7 @@ class DirectoryIterator(Iterator):
         elif self.class_mode == 'sparse':
             batch_y = self.classes[index_array]
         elif self.class_mode == 'binary':
-            batch_y = self.classes[index_array].astype(K.floatx())
+            batch_y = self.classes[index_array].astype(keras.backend.floatx())
         elif self.class_mode == 'categorical': 
             # batch_y = np.zeros((len(batch_x), self.frames_per_step))
             batch_y = np.zeros((len(batch_x), self.num_class))
@@ -793,4 +793,4 @@ class DirectoryIterator(Iterator):
         else:
             return batch_x
 
-        return batch_x, batch_y
+        return batch_x, batch_y, [None]
