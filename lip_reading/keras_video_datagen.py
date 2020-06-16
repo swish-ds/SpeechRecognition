@@ -2,7 +2,6 @@ from functools import partial
 import multiprocessing.pool
 import numpy as np
 import os
-import re
 from scipy import linalg
 import scipy.ndimage as ndi
 from six.moves import range
@@ -752,7 +751,7 @@ class DirectoryIterator(Iterator):
             index_array, current_index, current_batch_size = next(self.index_generator)
         
         # batch_x = np.zeros((current_batch_size,)  + (self.frames_per_step,) + self.image_shape, dtype='uint8')
-        batch_x = np.zeros((current_batch_size,)  + (self.frames_per_step,) + self.image_shape, dtype=keras.backend.floatx())
+        batch_x = np.zeros((current_batch_size,) + (self.frames_per_step,) + self.image_shape, dtype=keras.backend.floatx())
         grayscale = self.color_mode == 'grayscale'
 
         for kk in range(current_batch_size):
@@ -786,7 +785,6 @@ class DirectoryIterator(Iterator):
         elif self.class_mode == 'binary':
             batch_y = self.classes[index_array].astype(keras.backend.floatx())
         elif self.class_mode == 'categorical': 
-            # batch_y = np.zeros((len(batch_x), self.frames_per_step))
             batch_y = np.zeros((len(batch_x), self.num_class))
             for i in range(current_batch_size):
                 batch_y[i][s.mode(self.classes[index_array[i*self.frames_per_step:(i+1)*self.frames_per_step]])[0][0]] = 1
