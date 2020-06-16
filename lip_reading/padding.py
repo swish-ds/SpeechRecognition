@@ -12,6 +12,8 @@ class Pad:
         self.classes_num = ['0' + str(i) if i < 10 else str(i) for i in range(1, len(self.classes)+1)]
         self.word_ids = ['0' + str(i) if i < 10 else str(i) for i in range(1, 11)]
         self.classes_dict = dict(zip(self.classes_num, self.classes))
+        self.vids_and_frames = self.count_frames(mode='train')
+        self.vids_and_frames_val = self.count_frames(mode='val')
 
     def count_frames(self, mode):
         frames_dir = None
@@ -76,24 +78,22 @@ class Pad:
         elif mode == 'val':
             frames_dir = self.val_dir
 
-        vids_and_frames = self.count_frames(mode='train')
-        vids_and_frames_val = self.count_frames(mode='val')
-        print('Target train:', int(max(vids_and_frames.values())))
-        print('Target val:', int(max(vids_and_frames_val.values())))
+        print('Target train:', int(max(self.vids_and_frames.values())))
+        print('Target val:', int(max(self.vids_and_frames_val.values())))
 
         img_black = np.zeros((35, 70, 3))
         print(img_black.shape)
 
-        target_frame_num = max(int(max(vids_and_frames.values())), int(max(vids_and_frames_val.values())))
+        target_frame_num = max(int(max(self.vids_and_frames.values())), int(max(self.vids_and_frames_val.values())))
         print(target_frame_num)
 
         for classi in self.classes_dict.keys():
-            for vid in vids_and_frames.keys():
+            for vid in self.vids_and_frames.keys():
                 if classi == vid.split('_')[0]:
-                    if int(vids_and_frames[vid]) < target_frame_num:
-                        for i in range(1, (target_frame_num - int(vids_and_frames[vid]) + 1)):
+                    if int(self.vids_and_frames[vid]) < target_frame_num:
+                        for i in range(1, (target_frame_num - int(self.vids_and_frames[vid]) + 1)):
                             cv2.imwrite(frames_dir + self.classes_dict[classi] + '/' + vid + '_' + 'color' + '_' + str(
-                                int(vids_and_frames[vid]) + i).zfill(3) + '.jpg', img_black)
+                                int(self.vids_and_frames[vid]) + i).zfill(3) + '.jpg', img_black)
 
 # # Val
 # all_images_val = []  # 1746
