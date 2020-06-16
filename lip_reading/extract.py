@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 
 class Extractor:
-    def __init__(self, base_dir, train_dir, val_dir, test_dir, classes, detector, predictor,
+    def __init__(self, base_dir, train_dir, val_dir, test_dir, classes, detector, predictor, scale,
                  train_people, val_people, test_people=None):
         self.base_dir = base_dir
         self.train_dir = train_dir
@@ -15,6 +15,7 @@ class Extractor:
         self.classes = classes
         self.detector = detector
         self.predictor = predictor
+        self.scale = scale
         self.train_people = train_people
         self.val_people = val_people
         self.test_people = test_people
@@ -31,9 +32,20 @@ class Extractor:
             val_vids_dir = os.path.join(self.val_dir, class_name)
             test_vids_dir = os.path.join(self.test_dir, class_name)
 
-            os.makedirs(train_vids_dir)
-            os.makedirs(val_vids_dir)
-            os.makedirs(test_vids_dir)
+            try:
+                os.makedirs(train_vids_dir)
+            except IOError as e:
+                print('Error: ', e)
+
+            try:
+                os.makedirs(val_vids_dir)
+            except IOError as e:
+                print('Error: ', e)
+
+            try:
+                os.makedirs(test_vids_dir)
+            except IOError as e:
+                print('Error: ', e)
 
             print(class_name, 'directory created')
 
@@ -74,6 +86,7 @@ class Extractor:
             print('Error: ', e)
 
     def extract_crop(self, mode):
+        people_list = None
         if mode == 'train':
             people_list = self.train_people
         elif mode == 'val':
@@ -115,8 +128,8 @@ class Extractor:
                                 img = img[int(y1_m - offset_y_m):int(y2_m + offset_y_m),
                                           int(x1_m - offset_x_m):int(x2_m + offset_x_m)]
 
-                                scale_percent = 100
-                                img = cv2.resize(img, (int(img.shape[1] * scale_percent / 100), int(img.shape[0] * scale_percent / 100)),
+                                img = cv2.resize(img, (int(img.shape[1] * self.scale / 100),
+                                                       int(img.shape[0] * self.scale / 100)),
                                                  interpolation=cv2.INTER_AREA)
 
                             counter += 1

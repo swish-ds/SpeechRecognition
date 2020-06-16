@@ -137,9 +137,9 @@ class LnFit:
 
         print()
         datagen = ImageDataGenerator()
-        train_data = datagen.flow_from_directory('data/train', target_size=(70, 140), batch_size=self.batch_s,
+        train_data = datagen.flow_from_directory('data/train', target_size=(35, 70), batch_size=self.batch_s,
                                                  frames_per_step=self.frames_n, shuffle=False, color_mode='rgb')
-        val_data = datagen.flow_from_directory('data/validation', target_size=(70, 140), batch_size=self.batch_s,
+        val_data = datagen.flow_from_directory('data/validation', target_size=(35, 70), batch_size=self.batch_s,
                                                frames_per_step=self.frames_n, shuffle=False, color_mode='rgb')
 
         if self.model_type == 'norm':
@@ -149,7 +149,7 @@ class LnFit:
             ln = LipNet(batch_s=self.batch_s, frames_n=self.frames_n, img_h=self.img_h, img_w=self.img_w,
                         img_c=self.img_c, output_size=self.classes_n)
 
-        # print(ln.model().summary())
+        print(ln.model().summary())
 
         loss_func = CategoricalCrossentropy(from_logits=True, label_smoothing=0)
 
@@ -178,7 +178,7 @@ class LnFit:
                 for idx in range(len(record)):
                     a.append(list(record.values())[idx][i])
                 w.writerow(a)
-        os.remove(csv_file)
+        # os.remove(csv_file)
 
         print('\nSaved into: %s\nMax accuracy: %.4f%%' % (csv_file, max(history.history['val_accuracy']) * 100))
 
