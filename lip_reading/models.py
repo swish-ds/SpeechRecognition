@@ -73,13 +73,14 @@ class LipNet(tf.keras.Model):
 
 
 class LipNetNorm(tf.keras.Model):
-    def __init__(self, batch_s, frames_n, img_h, img_w, img_c, output_size=10):
+    def __init__(self, batch_s, frames_n, img_h, img_w, img_c, dropout_s=0.5, output_size=10):
         super(LipNetNorm, self).__init__()
         self.batch_s = batch_s
         self.frames_n = frames_n
         self.img_h = img_h
         self.img_w = img_w
         self.img_c = img_c
+        self.dropout_s = dropout_s
         self.output_size = output_size
 
         # block 1
@@ -87,7 +88,7 @@ class LipNetNorm(tf.keras.Model):
         self.conv1 = Conv3D(filters=32, kernel_size=(3, 5, 5), strides=(1, 2, 2),
                             activation='relu', padding='valid', use_bias=False)
         self.norm1 = BatchNormalization(momentum=0.99)
-        self.drop1 = SpatialDropout3D(0.5)
+        self.drop1 = SpatialDropout3D(self.dropout_s)
         self.maxp1 = MaxPool3D(pool_size=(1, 2, 2), strides=(1, 2, 2))
 
         # block 2
@@ -95,7 +96,7 @@ class LipNetNorm(tf.keras.Model):
         self.conv2 = Conv3D(filters=64, kernel_size=(3, 5, 5), strides=(1, 1, 1),
                             activation='relu', padding='valid', use_bias=False)
         self.norm2 = BatchNormalization(momentum=0.99)
-        self.drop2 = SpatialDropout3D(0.5)
+        self.drop2 = SpatialDropout3D(self.dropout_s)
         self.maxp2 = MaxPool3D(pool_size=(1, 2, 2), strides=(1, 2, 2))
 
         # block 3
@@ -103,7 +104,7 @@ class LipNetNorm(tf.keras.Model):
         self.conv3 = Conv3D(filters=96, kernel_size=(3, 3, 3), strides=(1, 1, 1),
                             activation='relu', padding='valid', use_bias=False)
         self.norm3 = BatchNormalization(momentum=0.99)
-        self.drop3 = SpatialDropout3D(0.5)
+        self.drop3 = SpatialDropout3D(self.dropout_s)
         self.maxp3 = MaxPool3D(pool_size=(1, 2, 2), strides=(1, 2, 2))
 
         # Reshape

@@ -25,7 +25,7 @@ class ResetStatesCallback(Callback):
 
 
 class LnFit:
-    def __init__(self, model_type, optimizer, epochs, lr=1e-4, mom=0.9, batch_s=10, classes_n=10, frames_n=22, img_w=140, img_h=70, img_c=3):
+    def __init__(self, model_type, optimizer, epochs, lr=1e-4, mom=0.9, batch_s=10, classes_n=10, dropout_s=0.5, frames_n=22, img_w=140, img_h=70, img_c=3):
         self.model_type = model_type
         self.optimizer = optimizer
         self.epochs = epochs
@@ -33,6 +33,7 @@ class LnFit:
         self.mom = mom
         self.batch_s = batch_s
         self.classes_n = classes_n
+        self.dropout_s = dropout_s
         self.frames_n = frames_n
         self.img_w = img_w
         self.img_h = img_h
@@ -137,14 +138,14 @@ class LnFit:
 
         print()
         datagen = ImageDataGenerator()
-        train_data = datagen.flow_from_directory('data/train', target_size=(35, 70), batch_size=self.batch_s,
+        train_data = datagen.flow_from_directory('data/train', target_size=(70, 140), batch_size=self.batch_s,
                                                  frames_per_step=self.frames_n, shuffle=False, color_mode='rgb')
-        val_data = datagen.flow_from_directory('data/validation', target_size=(35, 70), batch_size=self.batch_s,
+        val_data = datagen.flow_from_directory('data/validation', target_size=(70, 140), batch_size=self.batch_s,
                                                frames_per_step=self.frames_n, shuffle=False, color_mode='rgb')
 
         if self.model_type == 'norm':
             ln = LipNetNorm(batch_s=self.batch_s, frames_n=self.frames_n, img_h=self.img_h, img_w=self.img_w,
-                        img_c=self.img_c, output_size=self.classes_n)
+                        img_c=self.img_c, dropout_s=self.dropout_s,  output_size=self.classes_n)
         elif self.model_type == 'ln':
             ln = LipNet(batch_s=self.batch_s, frames_n=self.frames_n, img_h=self.img_h, img_w=self.img_w,
                         img_c=self.img_c, output_size=self.classes_n)

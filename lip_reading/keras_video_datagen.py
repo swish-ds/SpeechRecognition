@@ -1,15 +1,17 @@
-from functools import partial
 import multiprocessing.pool
-import numpy as np
 import os
-from scipy import linalg
-import scipy.ndimage as ndi
-from six.moves import range
 import threading
 import warnings
-from scipy import stats as s
+from functools import partial
+
+import numpy as np
+import scipy.ndimage as ndi
 from PIL import Image as pil_image
+from scipy import linalg
+from scipy import stats as s
+from six.moves import range
 from tensorflow import keras
+
 
 def random_rotation(x, rg, row_axis=1, col_axis=2, channel_axis=0,
                     fill_mode='nearest', cval=0.):
@@ -37,6 +39,7 @@ def random_rotation(x, rg, row_axis=1, col_axis=2, channel_axis=0,
     transform_matrix = transform_matrix_offset_center(rotation_matrix, h, w)
     x = apply_transform(x, transform_matrix, channel_axis, fill_mode, cval)
     return x
+
 
 def random_shift(x, wrg, hrg, row_axis=1, col_axis=2, channel_axis=0,
                  fill_mode='nearest', cval=0.):
@@ -67,6 +70,7 @@ def random_shift(x, wrg, hrg, row_axis=1, col_axis=2, channel_axis=0,
     x = apply_transform(x, transform_matrix, channel_axis, fill_mode, cval)
     return x
 
+
 def random_shear(x, intensity, row_axis=1, col_axis=2, channel_axis=0,
                  fill_mode='nearest', cval=0.):
     """Performs a random spatial shear of a Numpy image tensor.
@@ -93,6 +97,7 @@ def random_shear(x, intensity, row_axis=1, col_axis=2, channel_axis=0,
     transform_matrix = transform_matrix_offset_center(shear_matrix, h, w)
     x = apply_transform(x, transform_matrix, channel_axis, fill_mode, cval)
     return x
+
 
 def random_zoom(x, zoom_range, row_axis=1, col_axis=2, channel_axis=0,
                 fill_mode='nearest', cval=0.):
@@ -130,6 +135,7 @@ def random_zoom(x, zoom_range, row_axis=1, col_axis=2, channel_axis=0,
     x = apply_transform(x, transform_matrix, channel_axis, fill_mode, cval)
     return x
 
+
 def random_channel_shift(x, intensity, channel_axis=0):
     x = np.rollaxis(x, channel_axis, 0)
     min_x, max_x = np.min(x), np.max(x)
@@ -139,6 +145,7 @@ def random_channel_shift(x, intensity, channel_axis=0):
     x = np.rollaxis(x, 0, channel_axis + 1)
     return x
 
+
 def transform_matrix_offset_center(matrix, x, y):
     o_x = float(x) / 2 + 0.5
     o_y = float(y) / 2 + 0.5
@@ -146,6 +153,7 @@ def transform_matrix_offset_center(matrix, x, y):
     reset_matrix = np.array([[1, 0, -o_x], [0, 1, -o_y], [0, 0, 1]])
     transform_matrix = np.dot(np.dot(offset_matrix, matrix), reset_matrix)
     return transform_matrix
+
 
 def apply_transform(x,
                     transform_matrix,
@@ -179,15 +187,18 @@ def apply_transform(x,
     x = np.rollaxis(x, 0, channel_axis + 1)
     return x
 
+
 def flip_axis(x, axis):
     x = np.asarray(x).swapaxes(axis, 0)
     x = x[::-1, ...]
     x = x.swapaxes(0, axis)
     return x
 
+
 def random_mutiplication(x, range_mult):
     x = x * np.random.uniform(range_mult[0], range_mult[1])
     return x
+
 
 def array_to_img(x, data_format=None, scale=True):
     """Converts a 3D Numpy array to a PIL Image instance.
@@ -235,6 +246,7 @@ def array_to_img(x, data_format=None, scale=True):
     else:
         raise ValueError('Unsupported channel number: ', x.shape[2])
 
+
 def img_to_array(img, data_format=None):
     """Converts a PIL Image instance to a Numpy array.
     # Arguments
@@ -265,6 +277,7 @@ def img_to_array(img, data_format=None):
         raise ValueError('Unsupported image shape: ', x.shape)
     return x
 
+
 def load_img(path, grayscale=False, target_size=None):
     """Loads an image into PIL format.
     # Arguments
@@ -292,6 +305,7 @@ def load_img(path, grayscale=False, target_size=None):
         if img.size != hw_tuple:
             img = img.resize(hw_tuple)
     return img
+
 
 class ImageDataGenerator(object):
     """Generate minibatches of image data with real-time data augmentation.
@@ -352,7 +366,7 @@ class ImageDataGenerator(object):
                  vertical_flip=False,
                  rescale=None,
                  preprocessing_function=None,
-                 expand_dims = True,
+                 expand_dims=True,
                  data_format=None,
                  random_mult_range=0):
         if data_format is None:
@@ -438,10 +452,7 @@ class ImageDataGenerator(object):
             save_format=save_format,
             follow_links=follow_links)
 
-    def fit(self, x,
-            augment=False,
-            rounds=1,
-            seed=None):
+    def fit(self, x, augment=False, rounds=1, seed=None):
         """Fits internal statistics to some sample data.
         Required for featurewise_center, featurewise_std_normalization
         and zca_whitening.
@@ -465,10 +476,11 @@ class ImageDataGenerator(object):
             warnings.warn(
                 'Expected input to be images (as Numpy array) '
                 'following the data format convention "' + self.data_format + '" '
-                '(channels on axis ' + str(self.channel_axis) + '), i.e. expected '
-                'either 1, 3 or 4 channels on axis ' +
+                                                                              '(channels on axis ' + str(
+                    self.channel_axis) + '), i.e. expected '
+                                         'either 1, 3 or 4 channels on axis ' +
                 str(self.channel_axis) + '. '
-                'However, it was passed an array with shape ' + str(x.shape) +
+                                         'However, it was passed an array with shape ' + str(x.shape) +
                 ' (' + str(x.shape[self.channel_axis]) + ' channels).')
 
         if seed is not None:
@@ -505,6 +517,7 @@ class ImageDataGenerator(object):
             self.principal_components = np.dot(
                 np.dot(u, np.diag(1. / np.sqrt(s + self.zca_epsilon))), u.T)
 
+
 class Iterator(object):
     """Abstract base class for image data iterators.
     # Arguments
@@ -537,10 +550,10 @@ class Iterator(object):
                 index_array = np.arange(n)
                 if shuffle:
                     index_array = np.random.permutation(n)
-            
+
             current_index = (self.batch_index * batch_size * frames_per_step) % n
 
-            if n > current_index + batch_size*frames_per_step:
+            if n > current_index + batch_size * frames_per_step:
                 current_batch_size = batch_size
                 self.batch_index += 1
             else:
@@ -548,7 +561,8 @@ class Iterator(object):
                 self.batch_index = 0
             self.total_batches_seen += 1
 
-            yield (index_array[current_index: current_index + frames_per_step * current_batch_size], current_index, current_batch_size)
+            yield (index_array[current_index: current_index + frames_per_step * current_batch_size], current_index,
+                   current_batch_size)
 
     def __iter__(self):
         # Needed if we want to do something like:
@@ -557,6 +571,7 @@ class Iterator(object):
 
     def __next__(self, *args, **kwargs):
         return self.next(*args, **kwargs)
+
 
 def _count_valid_files_in_directory(directory, white_list_formats, follow_links):
     """Count files with extension in `white_list_formats` contained in a directory.
@@ -568,6 +583,7 @@ def _count_valid_files_in_directory(directory, white_list_formats, follow_links)
         the count of files with extension in `white_list_formats` contained in
         the directory.
     """
+
     def _recursive_list(subpath):
         return sorted(os.walk(subpath, followlinks=follow_links), key=lambda tpl: tpl[0])
 
@@ -582,6 +598,7 @@ def _count_valid_files_in_directory(directory, white_list_formats, follow_links)
             if is_valid:
                 samples += 1
     return samples
+
 
 def _list_valid_filenames_in_directory(directory, white_list_formats,
                                        class_indices, follow_links):
@@ -598,6 +615,7 @@ def _list_valid_filenames_in_directory(directory, white_list_formats,
             `directory`'s parent (e.g., if `directory` is "dataset/class1",
             the filenames will be ["class1/file1.jpg", "class1/file2.jpg", ...]).
     """
+
     def _recursive_list(subpath):
         return sorted(os.walk(subpath, followlinks=follow_links), key=lambda tpl: tpl[0])
 
@@ -618,8 +636,9 @@ def _list_valid_filenames_in_directory(directory, white_list_formats,
                 # add filename relative to directory
                 absolute_path = os.path.join(root, fname)
                 filenames.append(os.path.relpath(absolute_path, basedir))
-    
+
     return classes, filenames
+
 
 class DirectoryIterator(Iterator):
     """Iterator capable of reading images from a directory on disk.
@@ -749,19 +768,22 @@ class DirectoryIterator(Iterator):
         """
         with self.lock:
             index_array, current_index, current_batch_size = next(self.index_generator)
-        
+
         # batch_x = np.zeros((current_batch_size,)  + (self.frames_per_step,) + self.image_shape, dtype='uint8')
-        batch_x = np.zeros((current_batch_size,) + (self.frames_per_step,) + self.image_shape, dtype=keras.backend.floatx())
-        grayscale = self.color_mode == 'grayscale'
+        batch_x = np.zeros((current_batch_size,) + (self.frames_per_step,) + self.image_shape,
+                           dtype=keras.backend.floatx())
+        # grayscale = self.color_mode == 'grayscale'
+        grayscale = self.color_mode == 'rgb'
 
         for kk in range(current_batch_size):
             i = 0
-            for idx in index_array[kk * self.frames_per_step : (kk + 1) * self.frames_per_step]:
+            for idx in index_array[kk * self.frames_per_step: (kk + 1) * self.frames_per_step]:
                 fname = self.filenames[idx]
+                # print(fname)
                 img = load_img(os.path.join(self.directory, fname),
                                grayscale=grayscale,
                                target_size=self.target_size)
-                
+
                 x = img_to_array(img, data_format=self.data_format)
                 # print(self.image_shape)
                 # print(batch_x[kk, i].shape)
@@ -784,10 +806,10 @@ class DirectoryIterator(Iterator):
             batch_y = self.classes[index_array]
         elif self.class_mode == 'binary':
             batch_y = self.classes[index_array].astype(keras.backend.floatx())
-        elif self.class_mode == 'categorical': 
+        elif self.class_mode == 'categorical':
             batch_y = np.zeros((len(batch_x), self.num_class))
             for i in range(current_batch_size):
-                batch_y[i][s.mode(self.classes[index_array[i*self.frames_per_step:(i+1)*self.frames_per_step]])[0][0]] = 1
+                batch_y[i][s.mode(self.classes[index_array[i * self.frames_per_step:(i + 1) * self.frames_per_step]])[0][0]] = 1
         else:
             return batch_x
 

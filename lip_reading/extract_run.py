@@ -23,7 +23,7 @@ val_people = 'F10, M07'.split(', ')
 print('Train speakers:', train_people)
 print('Val speakers:', val_people)
 
-ext = extract.Extractor(base_dir, train_dir, val_dir, test_dir, classes, detector, predictor, 100,
+ext = extract.Extractor(base_dir, train_dir, val_dir, test_dir, classes, detector, predictor, 200,
                         train_people, val_people, test_people=None)
 
 ext.remove_dirs()
