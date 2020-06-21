@@ -1,22 +1,23 @@
 import csv
 import os
-import time
 import random as rn
-import numpy as np
+import time
 from math import ceil
-from numba import cuda
 
+import numpy as np
 import tensorflow as tf
-from tensorflow.keras.layers import *
-from tensorflow.keras.models import *
-from tensorflow.keras.optimizers import Adam, SGD
+from numba import cuda
 from tensorflow.keras.backend import eval
 from tensorflow.keras.callbacks import Callback
+from tensorflow.keras.layers import *
 from tensorflow.keras.losses import CategoricalCrossentropy
+from tensorflow.keras.models import *
+from tensorflow.keras.optimizers import Adam, SGD
 
 from keras_video_datagen import ImageDataGenerator
-
 from models import LipNet, LipNetNorm
+
+import global_params
 
 
 class ResetStatesCallback(Callback):
@@ -25,7 +26,8 @@ class ResetStatesCallback(Callback):
 
 
 class LnFit:
-    def __init__(self, model_type, optimizer, epochs, lr=1e-4, mom=0.9, batch_s=10, classes_n=10, dropout_s=0.5, frames_n=22, img_w=140, img_h=70, img_c=3):
+    def __init__(self, model_type, optimizer, epochs, lr=1e-4, mom=0.9, batch_s=10, classes_n=10, dropout_s=0.5,
+                 frames_n=22, img_w=140, img_h=70, img_c=3):
         self.model_type = model_type
         self.optimizer = optimizer
         self.epochs = epochs
@@ -38,9 +40,6 @@ class LnFit:
         self.img_w = img_w
         self.img_h = img_h
         self.img_c = img_c
-
-        self.steps_per_epoch = ceil(28600 / (self.batch_s * self.frames_n))
-        self.validation_steps = ceil(4400 / (self.batch_s * self.frames_n))
 
         gpus = tf.config.experimental.list_physical_devices('GPU')
 
@@ -132,23 +131,25 @@ class LnFit:
     def train_seq(self):
         global history, ln
 
-        rn.seed(0)
-        np.random.seed(0)
-        tf.random.set_seed(0)
+        rn.seed(global_params.rn_seed)
+        np.random.seed(global_params.np_random_seed)
+        tf.random.set_seed(global_params.tf_random)
 
         print()
         datagen = ImageDataGenerator()
-        train_data = datagen.flow_from_directory('data/train', target_size=(70, 140), batch_size=self.batch_s,
+        train_data = datagen.flow_from_directory('data/train', target_size=(self.img_h, self.img_w),
+                                                 batch_size=self.batch_s,
                                                  frames_per_step=self.frames_n, shuffle=False, color_mode='rgb')
-        val_data = datagen.flow_from_directory('data/validation', target_size=(70, 140), batch_size=self.batch_s,
+        val_data = datagen.flow_from_directory('data/validation', target_size=(self.img_h, self.img_w),
+                                               batch_size=self.batch_s,
                                                frames_per_step=self.frames_n, shuffle=False, color_mode='rgb')
 
         if self.model_type == 'norm':
             ln = LipNetNorm(batch_s=self.batch_s, frames_n=self.frames_n, img_h=self.img_h, img_w=self.img_w,
-                        img_c=self.img_c, dropout_s=self.dropout_s,  output_size=self.classes_n)
+                            img_c=self.img_c, dropout_s=self.dropout_s, output_size=self.classes_n)
         elif self.model_type == 'ln':
             ln = LipNet(batch_s=self.batch_s, frames_n=self.frames_n, img_h=self.img_h, img_w=self.img_w,
-                        img_c=self.img_c, output_size=self.classes_n)
+                            img_c=self.img_c, dropout_s=self.dropout_s, output_size=self.classes_n)
 
         print(ln.model().summary())
 
@@ -164,8 +165,11 @@ class LnFit:
 
         print("\nLearning rate = %s" % (self.format_e(eval(ln.optimizer.lr))))
 
-        history = ln.fit(train_data, epochs=self.epochs, steps_per_epoch=self.steps_per_epoch,
-                         validation_data=val_data, validation_steps=self.validation_steps, shuffle=False,
+        steps_per_epoch = ceil(train_data.samples / (self.batch_s * self.frames_n))
+        validation_steps = ceil(val_data.samples / (self.batch_s * self.frames_n))
+
+        history = ln.fit(train_data, epochs=self.epochs, steps_per_epoch=steps_per_epoch,
+                         validation_data=val_data, validation_steps=validation_steps, shuffle=False,
                          callbacks=[ResetStatesCallback()])
 
         csv_file = self.create_csv()
@@ -179,7 +183,7 @@ class LnFit:
                 for idx in range(len(record)):
                     a.append(list(record.values())[idx][i])
                 w.writerow(a)
-        # os.remove(csv_file)
+        os.remove(csv_file)
 
         print('\nSaved into: %s\nMax accuracy: %.4f%%' % (csv_file, max(history.history['val_accuracy']) * 100))
 
@@ -188,7 +192,7 @@ class LnFit:
 
         self.play_sound()
 
-        time.sleep(2)
+        time.sleep(5)
 
 # cuda.select_device(0)
 # cuda.close()

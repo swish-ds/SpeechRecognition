@@ -772,8 +772,7 @@ class DirectoryIterator(Iterator):
         # batch_x = np.zeros((current_batch_size,)  + (self.frames_per_step,) + self.image_shape, dtype='uint8')
         batch_x = np.zeros((current_batch_size,) + (self.frames_per_step,) + self.image_shape,
                            dtype=keras.backend.floatx())
-        # grayscale = self.color_mode == 'grayscale'
-        grayscale = self.color_mode == 'rgb'
+        grayscale = self.color_mode == 'grayscale'
 
         for kk in range(current_batch_size):
             i = 0

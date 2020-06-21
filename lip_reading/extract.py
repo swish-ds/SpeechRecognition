@@ -6,9 +6,8 @@ from tqdm import tqdm
 
 
 class Extractor:
-    def __init__(self, base_dir, train_dir, val_dir, test_dir, classes, detector, predictor, scale,
-                 train_people, val_people, test_people=None):
-        self.base_dir = base_dir
+    def __init__(self, train_dir, val_dir, test_dir, classes, detector, predictor, scale,
+                 train_people, val_people, size_x, size_y, test_people=None):
         self.train_dir = train_dir
         self.val_dir = val_dir
         self.test_dir = test_dir
@@ -19,6 +18,8 @@ class Extractor:
         self.train_people = train_people
         self.val_people = val_people
         self.test_people = test_people
+        self.size_x = size_x
+        self.size_y = size_y
 
         self.classes_num = ['0' + str(i) if i < 10 else str(i) for i in range(1, len(classes)+1)]
         self.word_ids = ['0' + str(i) if i < 10 else str(i) for i in range(1, 11)]
@@ -122,8 +123,8 @@ class Extractor:
                                 x2_m = x_57 + 18
                                 y2_m = y_57 + 9
 
-                                offset_x_m = (70 - (abs(x1_m - x2_m))) / 2
-                                offset_y_m = (35 - (abs(y1_m - y2_m))) / 2
+                                offset_x_m = (self.size_x - (abs(x1_m - x2_m))) / 2
+                                offset_y_m = (self.size_y - (abs(y1_m - y2_m))) / 2
 
                                 img = img[int(y1_m - offset_y_m):int(y2_m + offset_y_m),
                                           int(x1_m - offset_x_m):int(x2_m + offset_x_m)]

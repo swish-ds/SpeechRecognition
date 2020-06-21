@@ -1,30 +1,30 @@
-import os
-import dlib
 import extract
+import global_params
 
-base_dir = 'data'
-train_dir = os.path.join(base_dir, 'train/')
-val_dir = os.path.join(base_dir, 'validation/')
-test_dir = os.path.join(base_dir, 'test/')
+train_dir = global_params.train_dir
+val_dir = global_params.val_dir
+test_dir = global_params.test_dir
 
-classes = 'Begin, Choose, Connection, Navigation, Next, Previous, Start, Stop, Hello, Web'
-# classes = 'Begin, Web'
-classes = classes.split(', ')
+classes = global_params.classes
 print('Classes:', classes)
 
-predictor_path = 'shape_predictor_68_face_landmarks.dat'
+predictor_path = global_params.predictor_path
+detector = global_params.detector
+predictor = global_params.predictor
 
-detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor(predictor_path)
-
-train_people = 'F01, F02, F04, F05, F06, F07, F08, F09, F11, M01, M02, M04, M08'.split(', ')
-# train_people = 'F01, M01, F09'.split(', ')
-val_people = 'F10, M07'.split(', ')
+train_people = global_params.train_people
+val_people = global_params.val_people
 print('Train speakers:', train_people)
 print('Val speakers:', val_people)
 
-ext = extract.Extractor(base_dir, train_dir, val_dir, test_dir, classes, detector, predictor, 200,
-                        train_people, val_people, test_people=None)
+size_x = global_params.size_x
+size_y = global_params.size_y
+scale = global_params.scale
+
+ext = extract.Extractor(train_dir=train_dir, val_dir=val_dir, test_dir=test_dir, classes=classes, detector=detector,
+                        predictor=predictor, scale=scale,
+                        train_people=train_people, val_people=val_people, size_x=size_x, size_y=size_y,
+                        test_people=None)
 
 ext.remove_dirs()
 ext.create_dirs()

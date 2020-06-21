@@ -5,31 +5,32 @@ from tensorflow.keras.models import Model
 
 
 class LipNet(tf.keras.Model):
-    def __init__(self, batch_s, frames_n, img_h, img_w, img_c, output_size=10):
+    def __init__(self, batch_s, frames_n, img_h, img_w, img_c, dropout_s=0.5, output_size=10):
         super(LipNet, self).__init__()
         self.batch_s = batch_s
         self.frames_n = frames_n
         self.img_h = img_h
         self.img_w = img_w
         self.img_c = img_c
+        self.dropout_s = dropout_s
         self.output_size = output_size
 
         self.zero1 = ZeroPadding3D(padding=(1, 2, 2), name='zero1')
         self.conv1 = Conv3D(32, (3, 5, 5), strides=(1, 2, 2), kernel_initializer='he_normal', activation='relu',
                             name='conv1')
-        self.drop1 = SpatialDropout3D(0.5)
+        self.drop1 = SpatialDropout3D(self.dropout_s)
         self.maxp1 = MaxPool3D(pool_size=(1, 2, 2), strides=(1, 2, 2), name='max1')
 
         self.zero2 = ZeroPadding3D(padding=(1, 2, 2), name='zero2')
         self.conv2 = Conv3D(64, (3, 5, 5), strides=(1, 1, 1), kernel_initializer='he_normal', activation='relu',
                             name='conv2')
-        self.drop2 = SpatialDropout3D(0.5)
+        self.drop2 = SpatialDropout3D(self.dropout_s)
         self.maxp2 = MaxPool3D(pool_size=(1, 2, 2), strides=(1, 2, 2), name='max2')
 
         self.zero3 = ZeroPadding3D(padding=(1, 1, 1), name='zero3')
         self.conv3 = Conv3D(96, (3, 3, 3), strides=(1, 1, 1), kernel_initializer='he_normal', activation='relu',
                             name='conv3')
-        self.drop3 = SpatialDropout3D(0.5)
+        self.drop3 = SpatialDropout3D(self.dropout_s)
         self.maxp3 = MaxPool3D(pool_size=(1, 2, 2), strides=(1, 2, 2), name='max3')
 
         self.resh1 = TimeDistributed(Flatten())
