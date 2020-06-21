@@ -544,22 +544,35 @@ class Iterator(object):
         # Ensure self.batch_index is 0.
         self.reset()
         while True:
+            print('n:', n)
+            print('self.batch_index:', self.batch_index)
             if seed is not None:
                 np.random.seed(seed + self.total_batches_seen)
             if self.batch_index == 0:
                 index_array = np.arange(n)
                 if shuffle:
                     index_array = np.random.permutation(n)
+            print('index_array: [%s ... %s]' % (', '.join([str(a) for a in index_array[:4]]), ', '.join([str(a) for a in index_array[-4:]])))
 
             current_index = (self.batch_index * batch_size * frames_per_step) % n
+            print('++current_index = (%d * %d * %d) %% %d = %d' % (self.batch_index, batch_size, frames_per_step, n, current_index))
 
+            print('current_index + batch_size * frames_per_step = %d + %d * %d = %d' % (current_index, batch_size, frames_per_step, (current_index + batch_size * frames_per_step)))
             if n > current_index + batch_size * frames_per_step:
+                print('n >', current_index + batch_size * frames_per_step)
                 current_batch_size = batch_size
+                print('++current_batch_size = ', current_batch_size)
                 self.batch_index += 1
             else:
+                print('n <=', current_index + batch_size * frames_per_step)
                 current_batch_size = int((n - current_index) / frames_per_step)
+                print('current_batch_size = ', current_batch_size)
                 self.batch_index = 0
+                print('self.batch_index:', self.batch_index)
             self.total_batches_seen += 1
+
+            ret = index_array[current_index: current_index + frames_per_step * current_batch_size]
+            print('++index_array[%d:%d+%d*%d]: [%s ... %s]' % (current_index, current_index, frames_per_step, current_batch_size, ', '.join([str(a) for a in ret[:4]]), ', '.join([str(a) for a in ret[-4:]])))
 
             yield (index_array[current_index: current_index + frames_per_step * current_batch_size], current_index,
                    current_batch_size)
@@ -758,6 +771,7 @@ class DirectoryIterator(Iterator):
             i += len(classes)
         pool.close()
         pool.join()
+
         super(DirectoryIterator, self).__init__(
             self.samples, batch_size, frames_per_step, shuffle, seed)
 
@@ -766,17 +780,24 @@ class DirectoryIterator(Iterator):
         # Returns
             The next batch.
         """
+
+        # print('type(self.index_generator):', type(self.index_generator))
         with self.lock:
             index_array, current_index, current_batch_size = next(self.index_generator)
 
-        # batch_x = np.zeros((current_batch_size,)  + (self.frames_per_step,) + self.image_shape, dtype='uint8')
+        print('\n\nindex_array: [%s ... %s]' % (', '.join([str(a) for a in index_array[:4]]), ', '.join([str(a) for a in index_array[-4:]])))
+        print('current_index:', current_index)
+        print('current_batch_size:', current_batch_size)
+
         batch_x = np.zeros((current_batch_size,) + (self.frames_per_step,) + self.image_shape,
                            dtype=keras.backend.floatx())
+        print('batch_x.shape: ', batch_x.shape)
         grayscale = self.color_mode == 'grayscale'
 
         for kk in range(current_batch_size):
             i = 0
             for idx in index_array[kk * self.frames_per_step: (kk + 1) * self.frames_per_step]:
+                # TODO randomize fname choice class-wise
                 fname = self.filenames[idx]
                 # print(fname)
                 img = load_img(os.path.join(self.directory, fname),

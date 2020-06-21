@@ -12,8 +12,8 @@ base_dir = 'data'
 train_dir = os.path.join(base_dir, 'train/')
 val_dir = os.path.join(base_dir, 'validation/')
 test_dir = os.path.join(base_dir, 'test/')
-classes = 'Begin, Choose, Connection, Navigation, Next, Previous, Start, Stop, Hello, Web'
-# classes = 'Begin, Web, Navigation'
+# classes = 'Begin, Choose, Connection, Navigation, Next, Previous, Start, Stop, Hello, Web'
+classes = 'Begin, Web'
 classes = classes.split(', ')
 
 
@@ -22,8 +22,8 @@ predictor_path = 'shape_predictor_68_face_landmarks.dat'
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor(predictor_path)
 scale = 200
-train_people = 'F01, F02, F04, F05, F06, F07, F08, F09, F11, M01, M02, M04, M08'.split(', ')
-# train_people = 'F01, M01'.split(', ')
+# train_people = 'F01, F02, F04, F05, F06, F07, F08, F09, F11, M01, M02, M04, M08'.split(', ')
+train_people = 'F01, M01'.split(', ')
 val_people = 'F10, M07'.split(', ')
 size_x = 70
 size_y = 35
