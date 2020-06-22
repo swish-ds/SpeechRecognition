@@ -3,6 +3,7 @@ import os
 import threading
 import warnings
 from functools import partial
+import random
 
 import numpy as np
 import scipy.ndimage as ndi
@@ -11,6 +12,15 @@ from scipy import linalg
 from scipy import stats as s
 from six.moves import range
 from tensorflow import keras
+
+
+def generate_rand(k):
+    lis = []
+    while len(lis) < k:
+        r = random.randint(0, k-1)
+        if r not in lis:
+            lis.append(r)
+    return lis
 
 
 def random_rotation(x, rg, row_axis=1, col_axis=2, channel_axis=0,
@@ -544,37 +554,52 @@ class Iterator(object):
         # Ensure self.batch_index is 0.
         self.reset()
         while True:
-            print('n:', n)
-            print('self.batch_index:', self.batch_index)
+            # print('n:', n)
+            # print('self.batch_index:', self.batch_index)
             if seed is not None:
                 np.random.seed(seed + self.total_batches_seen)
+                random.seed(seed + self.total_batches_seen)
             if self.batch_index == 0:
                 index_array = np.arange(n)
+                index_array2 = np.arange(n)
                 if shuffle:
-                    index_array = np.random.permutation(n)
-            print('index_array: [%s ... %s]' % (', '.join([str(a) for a in index_array[:4]]), ', '.join([str(a) for a in index_array[-4:]])))
+                    # index_array = np.random.permutation(n)
+                    index_array = np.arange(n)
+                    rands = generate_rand(int((len(index_array) / frames_per_step)))
+                    # index_array2 = np.zeros(len(index_array), dtype=np.int8)
+                    index_array2 = np.arange(n)
+                    for i in range(len(rands)):
+                        index_array2[i * frames_per_step:i * frames_per_step + frames_per_step] = index_array[rands[i] * frames_per_step:rands[i] * frames_per_step + frames_per_step]
+
+            # print('index_array2: [%s ... %s]' % (', '.join([str(a) for a in index_array2[:4]]), ', '.join([str(a) for a in index_array2[-4:]])))
+            # print('index_array2: %s' % (index_array2))
+            # comp = (index_array == sorted(index_array2))
+            # print(False in comp)
 
             current_index = (self.batch_index * batch_size * frames_per_step) % n
-            print('++current_index = (%d * %d * %d) %% %d = %d' % (self.batch_index, batch_size, frames_per_step, n, current_index))
+            # print('++current_index = (%d * %d * %d) %% %d = %d' % (self.batch_index, batch_size, frames_per_step, n, current_index))
 
-            print('current_index + batch_size * frames_per_step = %d + %d * %d = %d' % (current_index, batch_size, frames_per_step, (current_index + batch_size * frames_per_step)))
+            # print('current_index + batch_size * frames_per_step = %d + %d * %d = %d' % (current_index, batch_size, frames_per_step, (current_index + batch_size * frames_per_step)))
             if n > current_index + batch_size * frames_per_step:
-                print('n >', current_index + batch_size * frames_per_step)
+                # print('n >', current_index + batch_size * frames_per_step)
                 current_batch_size = batch_size
-                print('++current_batch_size = ', current_batch_size)
+                # print('++current_batch_size = ', current_batch_size)
                 self.batch_index += 1
             else:
-                print('n <=', current_index + batch_size * frames_per_step)
+                # print('n <=', current_index + batch_size * frames_per_step)
                 current_batch_size = int((n - current_index) / frames_per_step)
-                print('current_batch_size = ', current_batch_size)
+                # print('current_batch_size = ', current_batch_size)
                 self.batch_index = 0
-                print('self.batch_index:', self.batch_index)
+            # print('self.batch_index:', self.batch_index)
             self.total_batches_seen += 1
 
-            ret = index_array[current_index: current_index + frames_per_step * current_batch_size]
-            print('++index_array[%d:%d+%d*%d]: [%s ... %s]' % (current_index, current_index, frames_per_step, current_batch_size, ', '.join([str(a) for a in ret[:4]]), ', '.join([str(a) for a in ret[-4:]])))
+            # print('self.total_batches_seen: ', self.total_batches_seen)
+            # print('current_batch_size = ', current_batch_size)
 
-            yield (index_array[current_index: current_index + frames_per_step * current_batch_size], current_index,
+            # ret = index_array2[current_index: current_index + frames_per_step * current_batch_size]
+            # print('++index_array[%d:%d+%d*%d]: [%s ... %s]' % (current_index, current_index, frames_per_step, current_batch_size, ', '.join([str(a) for a in ret[:4]]), ', '.join([str(a) for a in ret[-4:]])))
+
+            yield (index_array2[current_index: current_index + frames_per_step * current_batch_size], current_index,
                    current_batch_size)
 
     def __iter__(self):
@@ -729,6 +754,8 @@ class DirectoryIterator(Iterator):
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
+        print('Shuffle:', shuffle)
+        print('Seed:', seed)
 
         white_list_formats = {'png', 'jpg', 'jpeg', 'bmp', 'ppm'}
 
@@ -772,6 +799,17 @@ class DirectoryIterator(Iterator):
         pool.close()
         pool.join()
 
+        # filenames2 = self.filenames
+        # kk = 0
+        # for name in self.filenames:
+        #     for name2 in filenames2:
+        #         if name == name2:
+        #             kk += 1
+        #
+        # print('len(self.filenames):', len(self.filenames))
+        # print('len(self.filenames2):', len(filenames2))
+        # print('kk:', kk)
+
         super(DirectoryIterator, self).__init__(
             self.samples, batch_size, frames_per_step, shuffle, seed)
 
@@ -785,19 +823,18 @@ class DirectoryIterator(Iterator):
         with self.lock:
             index_array, current_index, current_batch_size = next(self.index_generator)
 
-        print('\n\nindex_array: [%s ... %s]' % (', '.join([str(a) for a in index_array[:4]]), ', '.join([str(a) for a in index_array[-4:]])))
-        print('current_index:', current_index)
-        print('current_batch_size:', current_batch_size)
+        # print('\n\nindex_array: [%s ... %s]' % (', '.join([str(a) for a in index_array[:4]]), ', '.join([str(a) for a in index_array[-4:]])))
+        # print('current_index:', current_index)
+        # print('current_batch_size:', current_batch_size)
 
         batch_x = np.zeros((current_batch_size,) + (self.frames_per_step,) + self.image_shape,
                            dtype=keras.backend.floatx())
-        print('batch_x.shape: ', batch_x.shape)
+        # print('batch_x.shape: ', batch_x.shape)
         grayscale = self.color_mode == 'grayscale'
 
         for kk in range(current_batch_size):
             i = 0
             for idx in index_array[kk * self.frames_per_step: (kk + 1) * self.frames_per_step]:
-                # TODO randomize fname choice class-wise
                 fname = self.filenames[idx]
                 # print(fname)
                 img = load_img(os.path.join(self.directory, fname),

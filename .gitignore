@@ -12,3 +12,8 @@ lip_reading/.ipynb_checkpoints
 lip_reading/helpers
 lip_reading/*.hdf5
 .idea
+lip_reading/[]record_1e-3_0.90_1.4772_0.9885_1.8686_0.6050_0.6350.csv
+lip_reading/iter_tests.ipynb
+lip_reading/lr_fit.ipynb
+lip_reading/model2.png
+lip_reading/test.py

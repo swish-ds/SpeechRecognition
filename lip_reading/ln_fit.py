@@ -139,10 +139,12 @@ class LnFit:
         datagen = ImageDataGenerator()
         train_data = datagen.flow_from_directory('data/train', target_size=(self.img_h, self.img_w),
                                                  batch_size=self.batch_s,
-                                                 frames_per_step=self.frames_n, shuffle=False, color_mode='rgb')
+                                                 frames_per_step=self.frames_n, shuffle=True, seed=0,
+                                                 color_mode='rgb')
         val_data = datagen.flow_from_directory('data/validation', target_size=(self.img_h, self.img_w),
                                                batch_size=self.batch_s,
-                                               frames_per_step=self.frames_n, shuffle=False, color_mode='rgb')
+                                               frames_per_step=self.frames_n, shuffle=True, seed=0,
+                                               color_mode='rgb')
 
         if self.model_type == 'norm':
             ln = LipNetNorm(batch_s=self.batch_s, frames_n=self.frames_n, img_h=self.img_h, img_w=self.img_w,
@@ -183,7 +185,7 @@ class LnFit:
                 for idx in range(len(record)):
                     a.append(list(record.values())[idx][i])
                 w.writerow(a)
-        os.remove(csv_file)
+        # os.remove(csv_file)
 
         print('\nSaved into: %s\nMax accuracy: %.4f%%' % (csv_file, max(history.history['val_accuracy']) * 100))
 
