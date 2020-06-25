@@ -89,8 +89,8 @@ class Randomizer:
         train_data['image'] = train_image
         train_data['class'] = train_class
 
-        train_data.to_csv('data/miracl/' + mode + '_new.csv', header=True, index=False)
+        train_data.to_csv('data/' + mode + '_new.csv', header=True, index=False)
 
-        train = pd.read_csv('data/miracl/' + mode + '_new.csv')
+        train = pd.read_csv('data/' + mode + '_new.csv')
         print(train.head())
         print((train.tail()))

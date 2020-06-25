@@ -9,19 +9,50 @@ import tensorflow as tf
 from numba import cuda
 from tensorflow.keras.backend import eval
 from tensorflow.keras.callbacks import Callback
-from tensorflow.keras.layers import *
+from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.losses import CategoricalCrossentropy
-from tensorflow.keras.models import *
 from tensorflow.keras.optimizers import Adam, SGD
 
+import global_params
 from keras_video_datagen import ImageDataGenerator
 from models import LipNet, LipNetNorm
 
-import global_params
+
+class SaveModelCallback(Callback):
+    def __init__(self, lnfit):
+        super(SaveModelCallback, self).__init__()
+        self.model_type = lnfit.model_type
+        self.val_losses = []
+        self.best_val_loss = None
+
+    def on_epoch_end(self, epoch, logs=None):
+        self.val_losses.append(logs['val_loss'])
+        if len(self.val_losses) > 1 and logs['val_loss'] < self.best_val_loss:
+            self.best_val_loss = logs['val_loss']
+            self.model.save("saved_models/%s/%s_%s_%s_%.4f_%.4f" % (
+                self.model_type,
+                self.model_type,
+                LnFit.format_e(eval(self.model.optimizer.lr)),
+                str(epoch + 1).zfill(3),
+                self.best_val_loss,
+                logs['val_accuracy']))
+            print('\nNew best val_loss:', self.best_val_loss)
+        elif len(self.val_losses) == 1:
+            self.best_val_loss = self.val_losses[-1]
+            self.model.save("saved_models/%s/%s_%s_%s_%.4f_%.4f" % (
+                self.model_type,
+                self.model_type,
+                LnFit.format_e(eval(self.model.optimizer.lr)),
+                str(epoch + 1).zfill(3),
+                self.best_val_loss,
+                logs['val_accuracy']))
+            print('\nCurrent best val_loss:', self.best_val_loss)
+        else:
+            print('\nStill best val_loss:', self.best_val_loss)
 
 
 class ResetStatesCallback(Callback):
-    def on_epoch_begin(self, epoch, logs):
+    def on_epoch_begin(self, epoch, logs=None):
         self.model.reset_states()
 
 
@@ -66,59 +97,10 @@ class LnFit:
         for time in range(10):
             os.system('play -nq -t alsa synth {} sine {}'.format(duration, freq))
 
-    def format_e(self, n):
+    @staticmethod
+    def format_e(n):
         a = '%E' % n
         return a.split('E')[0].rstrip('0').rstrip('.') + 'e-' + a.split('E')[1][-1]
-
-    # LipNetNorm
-    def create_model2(self, ):
-        model_small = Sequential()
-        # block 1
-        model_small.add(ZeroPadding3D(input_shape=(self.frames_n, 70, 140, 3), padding=(1, 2, 2)))
-        model_small.add(Conv3D(filters=32, kernel_size=(3, 5, 5), strides=(1, 2, 2),
-                               activation='relu', padding='valid', use_bias=False))
-        model_small.add(BatchNormalization(momentum=0.99))
-        model_small.add(SpatialDropout3D(0.5))
-        model_small.add(MaxPool3D(pool_size=(1, 2, 2), strides=(1, 2, 2)))
-
-        # block 2
-        model_small.add(ZeroPadding3D(padding=(1, 2, 2)))
-        model_small.add(Conv3D(filters=64, kernel_size=(3, 5, 5), strides=(1, 1, 1),
-                               activation='relu', padding='valid', use_bias=False))
-        model_small.add(BatchNormalization(momentum=0.99))
-        model_small.add(SpatialDropout3D(0.5))
-        model_small.add(MaxPool3D(pool_size=(1, 2, 2), strides=(1, 2, 2)))
-
-        # block 3
-        model_small.add(ZeroPadding3D(padding=(1, 1, 1)))
-        model_small.add(Conv3D(filters=96, kernel_size=(3, 3, 3), strides=(1, 1, 1),
-                               activation='relu', padding='valid', use_bias=False))
-        model_small.add(BatchNormalization(momentum=0.99))
-        model_small.add(SpatialDropout3D(0.5))
-        model_small.add(MaxPool3D(pool_size=(1, 2, 2), strides=(1, 2, 2)))
-
-        # Reshape
-        model_small.add(TimeDistributed(Flatten()))
-
-        # RNN block
-        model_small.add(Bidirectional(
-            GRU(256, activation='tanh', stateful=False, return_sequences=True,
-                dropout=0, recurrent_dropout=0)))
-        model_small.add(Bidirectional(
-            GRU(256, activation='tanh', stateful=False, return_sequences=False,
-                dropout=0, recurrent_dropout=0)))
-        # Outputs
-        model_small.add(Dense(10, activation='softmax'))
-
-        return model_small
-
-    def create_csv2(self):
-        csv_file = "record_%s_%.2f_%.4f_%.4f_%.4f_%.4f_%.4f.csv" % (
-            self.format_e(eval(ln.optimizer.lr)), eval(ln.optimizer.momentum),
-            history.history['loss'][-1], history.history['accuracy'][-1],
-            history.history['val_loss'][-1], history.history['val_accuracy'][-1],
-            max(history.history['val_accuracy']))
-        return csv_file
 
     def create_csv(self):
         csv_file = "record_%s_%.4f_%.4f_%.4f_%.4f_%.4f.csv" % (
@@ -143,7 +125,7 @@ class LnFit:
                                                  color_mode='rgb')
         val_data = datagen.flow_from_directory('data/validation', target_size=(self.img_h, self.img_w),
                                                batch_size=self.batch_s,
-                                               frames_per_step=self.frames_n, shuffle=True, seed=0,
+                                               frames_per_step=self.frames_n, shuffle=False, seed=None,
                                                color_mode='rgb')
 
         if self.model_type == 'norm':
@@ -151,9 +133,9 @@ class LnFit:
                             img_c=self.img_c, dropout_s=self.dropout_s, output_size=self.classes_n)
         elif self.model_type == 'ln':
             ln = LipNet(batch_s=self.batch_s, frames_n=self.frames_n, img_h=self.img_h, img_w=self.img_w,
-                            img_c=self.img_c, dropout_s=self.dropout_s, output_size=self.classes_n)
+                        img_c=self.img_c, dropout_s=self.dropout_s, output_size=self.classes_n)
 
-        print(ln.model().summary())
+        ln.model().summary()
 
         loss_func = CategoricalCrossentropy(from_logits=True, label_smoothing=0)
 
@@ -170,9 +152,17 @@ class LnFit:
         steps_per_epoch = ceil(train_data.samples / (self.batch_s * self.frames_n))
         validation_steps = ceil(val_data.samples / (self.batch_s * self.frames_n))
 
+        filepath = "saved_models/%s/%s_%s_{epoch:03d}_{val_loss:.4f}_{val_accuracy:.4f}.h5" % (
+            self.model_type,
+            self.model_type,
+            self.format_e(eval(ln.optimizer.lr)))
+
+        checkpoint = ModelCheckpoint(filepath, monitor='val_loss', verbose=0,
+                                     save_weights_only=True, save_best_only=True, mode='auto', save_freq='epoch')
+
         history = ln.fit(train_data, epochs=self.epochs, steps_per_epoch=steps_per_epoch,
                          validation_data=val_data, validation_steps=validation_steps, shuffle=False,
-                         callbacks=[ResetStatesCallback()])
+                         callbacks=[ResetStatesCallback(), checkpoint, SaveModelCallback(self)])
 
         csv_file = self.create_csv()
 

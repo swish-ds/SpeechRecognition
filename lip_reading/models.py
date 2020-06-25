@@ -1,7 +1,15 @@
 import tensorflow as tf
+import global_params
+import numpy as np
+import random as rn
+import os
 from tensorflow.keras.layers import Conv3D, ZeroPadding3D, MaxPool3D, Dense, Flatten, GRU, Bidirectional, \
     SpatialDropout3D, BatchNormalization, TimeDistributed, Input
 from tensorflow.keras.models import Model
+
+rn.seed(global_params.rn_seed)
+np.random.seed(global_params.np_random_seed)
+tf.random.set_seed(global_params.tf_random)
 
 
 class LipNet(tf.keras.Model):
@@ -44,7 +52,6 @@ class LipNet(tf.keras.Model):
         self.out = Dense(self.output_size, activation='softmax')
 
     def call(self, inputs, **kwargs):
-        # print(inputs)
         # block 1
         x = self.zero1(inputs)
         x = self.conv1(x)
@@ -122,7 +129,6 @@ class LipNetNorm(tf.keras.Model):
         self.out = Dense(self.output_size, activation='softmax')
 
     def call(self, inputs, **kwargs):
-        # print(inputs)
         # block 1
         x = self.zero1(inputs)
         x = self.conv1(x)
