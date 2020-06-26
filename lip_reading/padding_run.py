@@ -1,6 +1,5 @@
-import padding
-import os
-import global_params
+from scripts import padding
+from utils import global_params
 
 train_dir = global_params.train_dir
 val_dir = global_params.val_dir

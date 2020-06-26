@@ -13,10 +13,11 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.losses import CategoricalCrossentropy
 from tensorflow.keras.optimizers import Adam, SGD
 
-import global_params
-from keras_video_datagen import ImageDataGenerator
-from models import LipNet, LipNetNorm
+from utils import global_params
+from utils.keras_video_datagen import ImageDataGenerator
+from models.lr_models import LipNet, LipNetNorm
 
+# os.path.join(global_params.repo_dir, "lip_reading/models
 
 class SaveModelCallback(Callback):
     def __init__(self, lnfit):
@@ -29,23 +30,23 @@ class SaveModelCallback(Callback):
         self.val_losses.append(logs['val_loss'])
         if len(self.val_losses) > 1 and logs['val_loss'] < self.best_val_loss:
             self.best_val_loss = logs['val_loss']
-            self.model.save("saved_models/%s/%s_%s_%s_%.4f_%.4f" % (
+            self.model.save(os.path.join(global_params.repo_dir, "lip_reading/models/results/%s/%s_%s_%s_%.4f_%.4f" % (
                 self.model_type,
                 self.model_type,
                 LnFit.format_e(eval(self.model.optimizer.lr)),
                 str(epoch + 1).zfill(3),
                 self.best_val_loss,
-                logs['val_accuracy']))
+                logs['val_accuracy'])))
             print('\nNew best val_loss:', self.best_val_loss)
         elif len(self.val_losses) == 1:
             self.best_val_loss = self.val_losses[-1]
-            self.model.save("saved_models/%s/%s_%s_%s_%.4f_%.4f" % (
+            self.model.save(os.path.join(global_params.repo_dir, "lip_reading/models/results/%s/%s_%s_%s_%.4f_%.4f" % (
                 self.model_type,
                 self.model_type,
                 LnFit.format_e(eval(self.model.optimizer.lr)),
                 str(epoch + 1).zfill(3),
                 self.best_val_loss,
-                logs['val_accuracy']))
+                logs['val_accuracy'])))
             print('\nCurrent best val_loss:', self.best_val_loss)
         else:
             print('\nStill best val_loss:', self.best_val_loss)
@@ -103,11 +104,13 @@ class LnFit:
         return a.split('E')[0].rstrip('0').rstrip('.') + 'e-' + a.split('E')[1][-1]
 
     def create_csv(self):
-        csv_file = "record_%s_%.4f_%.4f_%.4f_%.4f_%.4f.csv" % (
+        csv_file = os.path.join(global_params.repo_dir, "lip_reading/models/results/%s/%s_%s_%.4f_%.4f_%.4f_%.4f_%.4f.csv" % (
+            self.model_type,
+            self.model_type,
             self.format_e(eval(ln.optimizer.lr)),
             history.history['loss'][-1], history.history['accuracy'][-1],
             history.history['val_loss'][-1], history.history['val_accuracy'][-1],
-            max(history.history['val_accuracy']))
+            max(history.history['val_accuracy'])))
         return csv_file
 
     def train_seq(self):
@@ -119,11 +122,11 @@ class LnFit:
 
         print()
         datagen = ImageDataGenerator()
-        train_data = datagen.flow_from_directory('data/train', target_size=(self.img_h, self.img_w),
+        train_data = datagen.flow_from_directory(os.path.join(global_params.repo_dir, "lip_reading/data/train"), target_size=(self.img_h, self.img_w),
                                                  batch_size=self.batch_s,
                                                  frames_per_step=self.frames_n, shuffle=True, seed=0,
                                                  color_mode='rgb')
-        val_data = datagen.flow_from_directory('data/validation', target_size=(self.img_h, self.img_w),
+        val_data = datagen.flow_from_directory(os.path.join(global_params.repo_dir, "lip_reading/data/validation"), target_size=(self.img_h, self.img_w),
                                                batch_size=self.batch_s,
                                                frames_per_step=self.frames_n, shuffle=False, seed=None,
                                                color_mode='rgb')
@@ -152,10 +155,10 @@ class LnFit:
         steps_per_epoch = ceil(train_data.samples / (self.batch_s * self.frames_n))
         validation_steps = ceil(val_data.samples / (self.batch_s * self.frames_n))
 
-        filepath = "saved_models/%s/%s_%s_{epoch:03d}_{val_loss:.4f}_{val_accuracy:.4f}.h5" % (
+        filepath = os.path.join(global_params.repo_dir, "lip_reading/models/results/%s/%s_%s_{epoch:03d}_{val_loss:.4f}_{val_accuracy:.4f}.h5" % (
             self.model_type,
             self.model_type,
-            self.format_e(eval(ln.optimizer.lr)))
+            self.format_e(eval(ln.optimizer.lr))))
 
         checkpoint = ModelCheckpoint(filepath, monitor='val_loss', verbose=0,
                                      save_weights_only=True, save_best_only=True, mode='auto', save_freq='epoch')
@@ -177,7 +180,7 @@ class LnFit:
                 w.writerow(a)
         # os.remove(csv_file)
 
-        print('\nSaved into: %s\nMax accuracy: %.4f%%' % (csv_file, max(history.history['val_accuracy']) * 100))
+        print('\nSaved into: %s\nMax val accuracy: %.4f%%' % (csv_file, max(history.history['val_accuracy']) * 100))
 
         cuda.current_context().reset()
         tf.keras.backend.clear_session()

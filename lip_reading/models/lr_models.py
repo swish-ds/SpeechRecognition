@@ -1,8 +1,7 @@
 import tensorflow as tf
-import global_params
+from utils import global_params
 import numpy as np
 import random as rn
-import os
 from tensorflow.keras.layers import Conv3D, ZeroPadding3D, MaxPool3D, Dense, Flatten, GRU, Bidirectional, \
     SpatialDropout3D, BatchNormalization, TimeDistributed, Input
 from tensorflow.keras.models import Model

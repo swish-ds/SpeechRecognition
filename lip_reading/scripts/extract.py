@@ -1,7 +1,7 @@
-import dlib
-import cv2
 import glob
 import os
+
+import cv2
 from tqdm import tqdm
 
 
@@ -21,7 +21,7 @@ class Extractor:
         self.size_x = size_x
         self.size_y = size_y
 
-        self.classes_num = ['0' + str(i) if i < 10 else str(i) for i in range(1, len(classes)+1)]
+        self.classes_num = ['0' + str(i) if i < 10 else str(i) for i in range(1, len(classes) + 1)]
         self.word_ids = ['0' + str(i) if i < 10 else str(i) for i in range(1, 11)]
         self.classes_dict = dict(zip(self.classes_num, classes))
 
@@ -105,7 +105,8 @@ class Extractor:
                     for word_id in self.word_ids[:]:
                         for f in sorted(
                                 glob.glob(
-                                    os.path.join('data/miracl/' + person + '/words/' + classi + '/' + word_id, "*.jpg"))):
+                                    os.path.join('data/miracl/' + person + '/words/' + classi + '/' + word_id,
+                                                 "*.jpg"))):
                             img = cv2.imread(f, 1)
                             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
                             rects = self.detector(gray)
@@ -127,7 +128,7 @@ class Extractor:
                                 offset_y_m = (self.size_y - (abs(y1_m - y2_m))) / 2
 
                                 img = img[int(y1_m - offset_y_m):int(y2_m + offset_y_m),
-                                          int(x1_m - offset_x_m):int(x2_m + offset_x_m)]
+                                      int(x1_m - offset_x_m):int(x2_m + offset_x_m)]
 
                                 img = cv2.resize(img, (int(img.shape[1] * self.scale / 100),
                                                        int(img.shape[0] * self.scale / 100)),

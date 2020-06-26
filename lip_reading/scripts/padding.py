@@ -1,6 +1,7 @@
-import numpy as np
-import cv2
 import glob
+
+import cv2
+import numpy as np
 
 
 class Pad:
@@ -8,12 +9,13 @@ class Pad:
         self.train_dir = train_dir
         self.val_dir = val_dir
         self.classes = classes
-        self.classes_num = ['0' + str(i) if i < 10 else str(i) for i in range(1, len(self.classes)+1)]
+        self.classes_num = ['0' + str(i) if i < 10 else str(i) for i in range(1, len(self.classes) + 1)]
         self.word_ids = ['0' + str(i) if i < 10 else str(i) for i in range(1, 11)]
         self.classes_dict = dict(zip(self.classes_num, self.classes))
         self.vids_and_frames = self.count_frames(mode='train')
         self.vids_and_frames_val = self.count_frames(mode='val')
-        self.target_frame_num = max(int(max(self.vids_and_frames.values())), int(max(self.vids_and_frames_val.values())))
+        self.target_frame_num = max(int(max(self.vids_and_frames.values())),
+                                    int(max(self.vids_and_frames_val.values())))
         print('Target train:', int(max(self.vids_and_frames.values())))
         print('Target val:', int(max(self.vids_and_frames_val.values())))
         print("target_frame_num: ", self.target_frame_num)

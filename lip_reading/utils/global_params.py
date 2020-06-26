@@ -1,23 +1,22 @@
 import dlib
 import os
 
-# random seeds (train_run, randomize_run)
+# for random seeds (train_run, randomize_run)
 rn_seed = 0
 np_random_seed = 0
 tf_random = 0
 
-
-# extract_run, padding_run, randomize_run
-base_dir = 'data'
+# for extract_run, padding_run, randomize_run
+repo_dir = os.environ['LRDIR']
+base_dir = os.path.join(os.environ['LRDIR'], 'lip_reading/data/')
 train_dir = os.path.join(base_dir, 'train/')
 val_dir = os.path.join(base_dir, 'validation/')
 test_dir = os.path.join(base_dir, 'test/')
 classes = 'Begin, Choose, Connection, Navigation, Next, Previous, Start, Stop, Hello, Web'
 classes = classes.split(', ')
 
-
-# extract_run
-predictor_path = 'shape_predictor_68_face_landmarks.dat'
+# for extract_run
+predictor_path = os.path.join(os.environ['LRDIR'][:-1], 'lip_reading/utils/shape_predictor_68_face_landmarks.dat')
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor(predictor_path)
 scale = 200
@@ -26,11 +25,10 @@ val_people = 'F10, M07'.split(', ')
 size_x = 70
 size_y = 35
 
-
-# train_run
+# for train_run
 model_type = 'norm'     # can change
 optimizer = 'sgd'       # can change
-epochs = 300            # can change+
+epochs = 23            # can change+
 lr = 4e-3
 mom = 0.9
 batch_s = 10            # can change+

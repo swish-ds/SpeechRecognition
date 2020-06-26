@@ -1,7 +1,7 @@
 import numpy as np
 import random
-import randomize
-import global_params
+from scripts import randomize
+from utils import global_params
 
 random.seed(global_params.rn_seed)
 np.random.seed(global_params.np_random_seed)

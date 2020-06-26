@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
+from utils import global_params
+
 random.seed(0)
 np.random.seed(0)
 
@@ -59,8 +61,10 @@ class Randomizer:
                 for frame in frames:
                     if video_names_uniq[i].split(str(i + 1).zfill(3) + '_')[1] == \
                             frame.split('/')[-1].split('.')[0].split('_color')[0]:
-                        os.rename(frame, frame.split('/')[0] + '/' + frame.split('/')[1] + '/'
-                                  + frame.split('/')[2] + '/' + str(i + 1).zfill(3) + '_' + frame.split('/')[-1])
+                        os.rename(frame,
+                                  global_params.repo_dir + frame.split('/')[6] + '/' + frame.split('/')[7] + '/' +
+                                  frame.split('/')[8] + '/' + frame.split('/')[9] + '/'
+                                  + str(i + 1).zfill(3) + '_' + frame.split('/')[-1])
 
     def save_to_csv(self, mode):
         print('Saving to .csv:', mode)
@@ -77,20 +81,15 @@ class Randomizer:
         for class_id in tqdm(range(len(self.classes))):
             images = sorted(glob.glob(frames_dir + self.classes[class_id] + '/*.jpg'))
             for i in range(len(images)):
-                if ('noised' in images[i] or 'rand_contr' in images[i]
-                        or 'vert_flip' in images[i] or 'hor_flip' in images[i]):
-                    train_image.append(images[i].split('/')[3])
-                    train_class.append(self.classes_dict[images[i].split('/')[3].split(']')[-1][:2]])
-                else:
-                    train_image.append(images[i].split('/')[3])
-                    train_class.append(self.classes_dict[images[i].split('/')[3].split('_')[1]])
+                train_image.append(images[i].split('/')[-1])
+                train_class.append(self.classes_dict[images[i].split('/')[-1].split('_')[1]])
 
         train_data = pd.DataFrame()
         train_data['image'] = train_image
         train_data['class'] = train_class
 
-        train_data.to_csv('data/' + mode + '_new.csv', header=True, index=False)
+        train_data.to_csv(global_params.base_dir + mode + '_new.csv', header=True, index=False)
 
-        train = pd.read_csv('data/' + mode + '_new.csv')
+        train = pd.read_csv(os.path.join(global_params.repo_dir, 'lip_reading/data/' + mode + '_new.csv'))
         print(train.head())
         print((train.tail()))

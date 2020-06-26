@@ -1,5 +1,5 @@
-import global_params
-import ln_fit
+from utils import global_params
+from scripts import ln_fit
 
 fit = ln_fit.LnFit(model_type=global_params.model_type, optimizer=global_params.optimizer, epochs=global_params.epochs,
                    lr=global_params.lr, mom=global_params.mom, batch_s=global_params.batch_s,

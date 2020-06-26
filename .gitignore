@@ -5,11 +5,13 @@ lip_reading/.vscode
 lip_reading/.idea
 lip_reading/.directory
 lip_reading/__pycache__
+lip_reading/models/.directory
 
 # directories
 lip_reading/data
 lip_reading/temp
 
 # files
-lip_reading/iter_tests.ipynb
-lip_reading/master_notebook.ipynb
+lip_reading/notebooks/iter_tests.ipynb
+lip_reading/notebooks/master_notebook.ipynb
+lip_reading/utils/envs
