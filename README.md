@@ -15,9 +15,6 @@ To tackle this issue we padded each sequence to reach 22 frames.
 
 #### Results
 
-
-#####Accuracy
-
 | Word      | Accuracy |
 |:------------|:----------|
 | Begin      | 0.75     |
