@@ -29,4 +29,4 @@ ext = extract.Extractor(train_dir=train_dir, val_dir=val_dir, test_dir=test_dir,
 ext.remove_dirs()
 ext.create_dirs()
 ext.extract_crop(mode='train')
-ext.extract_crop(mode='val')
+# ext.extract_crop(mode='val')

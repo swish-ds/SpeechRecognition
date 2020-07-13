@@ -4,6 +4,7 @@ import threading
 import warnings
 from functools import partial
 import random
+from albumentations import *
 
 import numpy as np
 import scipy.ndimage as ndi
@@ -13,6 +14,9 @@ from scipy import stats as s
 from six.moves import range
 from tensorflow import keras
 
+
+def augment(aug, image):
+    return aug(image=image)['image']
 
 def generate_rand(k):
     lis = []
@@ -442,6 +446,7 @@ class ImageDataGenerator(object):
             save_format=save_format)
 
     def flow_from_directory(self, directory,
+                            augm = False,
                             target_size=(256, 256), color_mode='rgb',
                             classes=None, class_mode='categorical',
                             frames_per_step=4,
@@ -452,6 +457,7 @@ class ImageDataGenerator(object):
                             follow_links=False):
         return DirectoryIterator(
             directory, self,
+            augm=augm,
             target_size=target_size, color_mode=color_mode,
             frames_per_step=frames_per_step,
             classes=classes, class_mode=class_mode,
@@ -715,6 +721,7 @@ class DirectoryIterator(Iterator):
     """
 
     def __init__(self, directory, image_data_generator,
+                 augm = False,
                  target_size=(256, 256), color_mode='rgb',
                  classes=None, class_mode='categorical',
                  frames_per_step=4,
@@ -724,6 +731,7 @@ class DirectoryIterator(Iterator):
                  follow_links=False):
         if data_format is None:
             data_format = keras.backend.image_data_format()
+        self.augm = augm
         self.directory = directory
         self.frames_per_step = frames_per_step
         self.image_data_generator = image_data_generator
@@ -780,6 +788,7 @@ class DirectoryIterator(Iterator):
 
         print('Found %d images belonging to %d classes.' %
               (self.samples, self.num_class))
+        self.videos = int(self.samples / self.frames_per_step)
 
         # second, build an index of the images in the different class subfolders
         results = []
@@ -834,16 +843,37 @@ class DirectoryIterator(Iterator):
 
         for kk in range(current_batch_size):
             i = 0
+            rand_aug = np.random.randint(0, 5)
             for idx in index_array[kk * self.frames_per_step: (kk + 1) * self.frames_per_step]:
                 fname = self.filenames[idx]
                 # print(fname)
                 img = load_img(os.path.join(self.directory, fname),
                                grayscale=grayscale,
                                target_size=self.target_size)
-
                 x = img_to_array(img, data_format=self.data_format)
-                # print(self.image_shape)
-                # print(batch_x[kk, i].shape)
+
+                if self.augm:
+                    if rand_aug == 1:
+                        aug2 = ChannelShuffle(always_apply=True, p=1)
+                        x = np.asarray(x, dtype='uint8')
+                        x = augment(aug2, x)
+                        x = np.asarray(x, dtype=keras.backend.floatx())
+                    elif rand_aug == 2:
+                        aug2 = Rotate(limit=(30, 30), always_apply=True, p=1)
+                        x = np.asarray(x, dtype='uint8')
+                        x = augment(aug2, x)
+                        x = np.asarray(x, dtype=keras.backend.floatx())
+                    elif rand_aug == 3:
+                        aug2 = Rotate(limit=(330, 330), always_apply=True, p=1)
+                        x = np.asarray(x, dtype='uint8')
+                        x = augment(aug2, x)
+                        x = np.asarray(x, dtype=keras.backend.floatx())
+                    elif rand_aug == 4:
+                        aug1 = CLAHE(clip_limit=(2, 2), tile_grid_size=(15, 15), always_apply=True, p=1)
+                        x = np.asarray(x, dtype='uint8')
+                        x = augment(aug1, x)
+                        x = np.asarray(x, dtype=keras.backend.floatx())
+
                 batch_x[kk, i] = x
                 i += 1
 

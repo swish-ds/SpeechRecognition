@@ -6,8 +6,8 @@ fit = ln_fit.LnFit(model_type=global_params.model_type, optimizer=global_params.
                    classes_n=global_params.classes_n, dropout_s=global_params.dropout_s,
                    frames_n=global_params.frames_n,
                    img_w=global_params.img_w, img_h=global_params.img_h, img_c=global_params.img_c)
-
-lrs = [4e-3]
+# 1e-4
+lrs = [1e-4]
 moms = [0.90]
 
 for lr in lrs:

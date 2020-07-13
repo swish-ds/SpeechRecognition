@@ -5,19 +5,22 @@ import numpy as np
 
 
 class Pad:
-    def __init__(self, train_dir, val_dir, classes):
+    def __init__(self, train_dir, val_dir, test_dir, classes):
         self.train_dir = train_dir
         self.val_dir = val_dir
+        self.test_dir = test_dir
         self.classes = classes
         self.classes_num = ['0' + str(i) if i < 10 else str(i) for i in range(1, len(self.classes) + 1)]
         self.word_ids = ['0' + str(i) if i < 10 else str(i) for i in range(1, 11)]
         self.classes_dict = dict(zip(self.classes_num, self.classes))
         self.vids_and_frames = self.count_frames(mode='train')
         self.vids_and_frames_val = self.count_frames(mode='val')
+        # self.vids_and_frames_test = self.count_frames(mode='test')
         self.target_frame_num = max(int(max(self.vids_and_frames.values())),
                                     int(max(self.vids_and_frames_val.values())))
         print('Target train:', int(max(self.vids_and_frames.values())))
         print('Target val:', int(max(self.vids_and_frames_val.values())))
+        # print('Target test:', int(max(self.vids_and_frames_test.values())))
         print("target_frame_num: ", self.target_frame_num)
 
     def count_frames(self, mode):
@@ -26,6 +29,8 @@ class Pad:
             frames_dir = self.train_dir
         elif mode == 'val':
             frames_dir = self.val_dir
+        elif mode == 'test':
+            frames_dir = self.test_dir
 
         all_images = []
         video_names = []
@@ -85,10 +90,12 @@ class Pad:
         elif mode == 'val':
             frames_dir = self.val_dir
             vids_and_frames = self.vids_and_frames_val
+        # elif mode == 'test':
+        #     frames_dir = self.test_dir
+        #     vids_and_frames = self.vids_and_frames_test
         print('Performing padding:', mode)
 
-        img_black = np.zeros((35, 70, 3))
-        # img_black = np.zeros((70, 140, 3))
+        img_black = np.zeros((70, 140, 3))
         for classi in self.classes_dict.keys():
             for vid in vids_and_frames.keys():
                 if classi == vid.split('_')[0]:

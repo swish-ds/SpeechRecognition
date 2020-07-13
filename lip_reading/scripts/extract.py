@@ -3,6 +3,9 @@ import os
 
 import cv2
 from tqdm import tqdm
+import numpy as np
+import imutils
+from imutils import face_utils
 
 
 class Extractor:
@@ -99,42 +102,109 @@ class Extractor:
                 or (mode == 'val' and os.path.isdir(self.val_dir)) \
                 or (mode == 'test' and os.path.isdir(self.test_dir)):
             print('\nExtract and crop:', mode)
-            counter = 0
-            for classi in tqdm(self.classes_num[:]):
-                for person in people_list[:]:
-                    for word_id in self.word_ids[:]:
+
+            for classi in self.classes_num[:1]:
+                for person in people_list[:1]:
+                    for word_id in self.word_ids[:1]:
                         for f in sorted(
                                 glob.glob(
                                     os.path.join('data/miracl/' + person + '/words/' + classi + '/' + word_id,
                                                  "*.jpg"))):
+                            print(f)
                             img = cv2.imread(f, 1)
-                            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-                            rects = self.detector(gray)
+                            # print(img.shape)
+                            # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                            faces = self.detector(img)
+                            # print(faces)
+                            if faces:
+                                faces =  [faces[0]]
 
-                            for k, rect in enumerate(rects):
-                                shape = self.predictor(gray, rect)
+                            for k, faces in enumerate(faces):
+                                # x1 = faces.left()
+                                # y1 = faces.top()
+                                # x2 = faces.right()
+                                # y2 = faces.bottom()
+
+                                # cv2.circle(img=img, center=(x1, y1), radius=2, color=(255, 0, 0), thickness=6)
+                                # cv2.circle(img=img, center=(x2, y2), radius=2, color=(255, 0, 0), thickness=6)
+                                # cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0))
+
+                                shape = self.predictor(img, faces)
+                                # shape = face_utils.shape_to_np(shape)
 
                                 x_51 = shape.part(51).x
                                 y_51 = shape.part(51).y
                                 x_57 = shape.part(57).x
                                 y_57 = shape.part(57).y
+                                x_48 = shape.part(48).x
+                                y_48 = shape.part(48).y
+                                x_54 = shape.part(54).x
+                                y_54 = shape.part(54).y
+
+                                x_62 = shape.part(62).x
+                                y_62 = shape.part(62).y
+                                x_66 = shape.part(66).x
+                                y_66 = shape.part(66).y
+
+                                x_50 = shape.part(50).x
+                                y_50 = shape.part(50).y
+                                x_52 = shape.part(52).x
+                                y_52 = shape.part(52).y
 
                                 x1_m = x_51 - 18
                                 y1_m = y_51 - 7
                                 x2_m = x_57 + 18
                                 y2_m = y_57 + 9
 
-                                offset_x_m = (self.size_x - (abs(x1_m - x2_m))) / 2
-                                offset_y_m = (self.size_y - (abs(y1_m - y2_m))) / 2
+                                # print(y_51, y_57, (y_57 - y_51) * 0.2, (y_57 - y_51) * 0.1)
+                                # print(x_48, x_54, (x_54 - x_48) * 0.2, (x_54 - x_48) * 0.1)
 
-                                img = img[int(y1_m - offset_y_m):int(y2_m + offset_y_m),
-                                      int(x1_m - offset_x_m):int(x2_m + offset_x_m)]
+                                # For the Russian dataset
+                                # y1_m = int(y_51 - ((y_57 - y_51) * 0.3))
+                                # y2_m = int(y_57 + ((y_57 - y_51) * 0.1))
+                                # x1_m = int(x_48 - ((x_54 - x_48) * 0.1))
+                                # x2_m = int(x_54 + ((x_54 - x_48) * 0.1))
 
-                                img = cv2.resize(img, (int(img.shape[1] * self.scale / 100),
-                                                       int(img.shape[0] * self.scale / 100)),
+                                cv2.circle(img=img, center=(x_51, y_51), radius=2, color=(0, 255, 0), thickness=1)
+                                cv2.circle(img=img, center=(x_57, y_57), radius=2, color=(0, 255, 0), thickness=1)
+                                cv2.circle(img=img, center=(x_48, y_48), radius=2, color=(0, 255, 0), thickness=1)
+                                cv2.circle(img=img, center=(x_54, y_54), radius=2, color=(0, 255, 0), thickness=1)
+                                # cv2.circle(img=img, center=(x_48, y_51), radius=2, color=(0, 0, 255), thickness=1)
+                                # cv2.circle(img=img, center=(x_54, y_57), radius=2, color=(0, 0, 255), thickness=1)
+
+                                # cv2.circle(img=img, center=(x_62, y_62), radius=2, color=(0, 0, 255), thickness=1)
+                                # cv2.circle(img=img, center=(x_66, y_66), radius=2, color=(0, 0, 255), thickness=1)
+                                #
+                                # cv2.circle(img=img, center=(x_62, y_62), radius=2, color=(0, 0, 255), thickness=1)
+                                # cv2.circle(img=img, center=(x_66, y_66), radius=2, color=(0, 0, 255), thickness=1)
+
+                                # img = img[y1_m:y2_m, x1_m:x2_m]
+                                # img = cv2.resize(img, (140, 70))
+
+
+                                offset_x_m = (70 - (abs(x1_m - x2_m))) / 2
+                                offset_y_m = (35 - (abs(y1_m - y2_m))) / 2
+
+                                x1_m2 = x1_m - int(offset_x_m)
+                                y1_m2 = y1_m - int(offset_y_m)
+                                x2_m2 = x2_m + int(offset_x_m)
+                                y2_m2 = y2_m + int(offset_y_m)
+
+                                cv2.rectangle(img, (x1_m2, y1_m2), (x2_m2, y2_m2), (0, 0, 255))
+
+                                img = img[int(y1_m - offset_y_m - 10):int(y2_m + offset_y_m + 10),
+                                          int(x1_m - offset_x_m - 10):int(x2_m + offset_x_m + 10)]
+
+
+                                # For the Russian dataset
+                                # img = img[int(y1_m):int(y2_m), int(x1_m):int(x2_m)]
+                                img = cv2.resize(img, (400, 200),
                                                  interpolation=cv2.INTER_AREA)
 
-                            counter += 1
+                                # img = cv2.resize(img, (int(img.shape[1] * 200 / 100),
+                                #                        int(img.shape[0] * 200 / 100)),
+                                #                  interpolation=cv2.INTER_AREA)
+
 
                             if mode == 'train':
                                 cv2.imwrite(

@@ -13,9 +13,10 @@ np.random.seed(0)
 
 
 class Randomizer:
-    def __init__(self, train_dir, val_dir, classes):
+    def __init__(self, train_dir, val_dir, test_dir, classes):
         self.train_dir = train_dir
         self.val_dir = val_dir
+        self.test_dir = test_dir
         self.classes = classes
         self.classes_num = ['0' + str(i) if i < 10 else str(i) for i in range(1, len(self.classes) + 1)]
         self.classes_dict = dict(zip(self.classes_num, self.classes))
@@ -36,6 +37,8 @@ class Randomizer:
             frames_dir = self.train_dir
         elif mode == 'val':
             frames_dir = self.val_dir
+        elif mode == 'test':
+            frames_dir = self.test_dir
 
         for classi in self.classes:
             video_names = []
@@ -62,7 +65,7 @@ class Randomizer:
                     if video_names_uniq[i].split(str(i + 1).zfill(3) + '_')[1] == \
                             frame.split('/')[-1].split('.')[0].split('_color')[0]:
                         os.rename(frame,
-                                  global_params.repo_dir + frame.split('/')[6] + '/' + frame.split('/')[7] + '/' +
+                                  global_params.repo_dir + '/' + frame.split('/')[6] + '/' + frame.split('/')[7] + '/' +
                                   frame.split('/')[8] + '/' + frame.split('/')[9] + '/'
                                   + str(i + 1).zfill(3) + '_' + frame.split('/')[-1])
 

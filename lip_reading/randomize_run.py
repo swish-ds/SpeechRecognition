@@ -12,9 +12,14 @@ test_dir = global_params.test_dir
 
 classes = global_params.classes
 
-randomizer = randomize.Randomizer(train_dir=train_dir, val_dir=val_dir, classes=classes)
+randomizer = randomize.Randomizer(train_dir=train_dir, val_dir=val_dir, test_dir=test_dir, classes=classes)
+
 randomizer.shuffle(mode='train')
 randomizer.save_to_csv(mode='train')
 print()
 randomizer.shuffle(mode='val')
 randomizer.save_to_csv(mode='val')
+print()
+# randomizer.shuffle(mode='test')
+# randomizer.save_to_csv(mode='test')
+
