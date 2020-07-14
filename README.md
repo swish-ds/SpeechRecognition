@@ -17,17 +17,16 @@ To tackle this issue we padded each sequence to reach 22 frames.
 
 | Word      | Accuracy |
 |:------------|:----------|
-| Begin      | 0.75     |
-| Choose     | 0.40     |
-| Connection | 0.80     |
-| Navigation | 0.80     |
-| Next       | 0.80     |
-| Previous   | 0.00     |
-| Start      | 0.55     |
+| Begin      | 1.00     |
+| Choose     | 1.00     |
+| Connection | 0.95     |
+| Navigation | 0.90     |
+| Next       | 0.95     |
+| Previous   | 0.25     |
+| Start      | 0.50     |
 | Stop       | 0.90     |
-| Hello      | 0.70     |
-| Web        | 0.75     |
-| Total      | 0.65     |
+| Hello      | 0.20     |
+| Web        | 0.85     |
 
 ##### Accuracy plot
 
