@@ -31,11 +31,11 @@ To tackle this issue we padded each sequence to reach 22 frames.
 
 ##### Accuracy plot
 
-![Confusion matrix](lip_reading/pictures/norm_res.png)
+![Accuracy plot](lip_reading/pictures/results/miracl/LipNetNorm2/%5Bmiracl_plain_LipNetNorm2%5D%5Bgraph%5Dnorm_1e-4_188_1.7099_0.7500.png)
 
 ##### Confusion matrix
 
-![Confusion matrix](lip_reading/pictures/norm_matrix.png)
+![Confusion matrix](lip_reading/pictures/results/miracl/LipNetNorm2/%5Bmiracl_plain_LipNetNorm2%5D%5Bmatrix%5Dnorm_1e-4_188_1.7099_0.7500.png)
 
 To ensure that our results are reproducible and represenvative we shuffled training data and set seeds for operations involving random.
 
